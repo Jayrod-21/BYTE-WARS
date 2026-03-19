@@ -1,0 +1,59 @@
+# BYTE Wars — Docker Compose Configuration
+# Spins up the full development stack: FastAPI backend, PostgreSQL, and Redis.
+# Usage: docker-compose up --build
+
+services:
+  # --- FastAPI Battle Engine Backend ---
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: byte-wars-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://bytewars:bytewars_dev@postgres:5432/bytewars
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  # --- PostgreSQL Database ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: byte-wars-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: bytewars
+      POSTGRES_PASSWORD: bytewars_dev
+      POSTGRES_DB: bytewars
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bytewars"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # --- Redis Cache ---
+  redis:
+    image: redis:7-alpine
+    container_name: byte-wars-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
