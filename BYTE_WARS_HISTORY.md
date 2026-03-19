@@ -106,4 +106,34 @@
 
 ---
 
+## [2026-03-19] — Phase 3: Champion Builder
+
+**Status:** Complete
+**Session Model:** claude-opus-4-6
+
+**Work Done:**
+- [x] Archetype system: 5 archetypes (tank, assassin, mage, ranger, support) with default stats and base gear
+- [x] Champion creation API (POST /api/champions) with archetype-based defaults
+- [x] Champion retrieval (GET /api/champions/{id}) and listing (GET /api/champions)
+- [x] Champion update (PATCH /api/champions/{id}) with rule enforcement
+- [x] Pydantic schemas with validation (slot limits, archetype check, name length)
+- [x] API key encryption at rest using Fernet symmetric encryption
+- [x] API keys never returned in responses (has_api_key boolean instead)
+- [x] Base gear immutability enforced (core rule #3)
+- [x] Cross-archetype gear selection allowed
+- [x] AI model selection stored per champion
+- [x] 12 test groups all passing
+
+**Decisions Made:**
+- In-memory champion storage for Phase 3 (PostgreSQL queries added in Phase 4)
+- Fernet encryption for API keys with env-based key (ENCRYPTION_KEY)
+- Routes mounted at /api/champions prefix
+- Archetype cannot be changed after creation
+- Stats determined by archetype (no direct stat modification)
+
+**Next Step:**
+- Phase 4: Match Orchestration — lobby system, real AI model integration
+
+---
+
 <!-- Add new entries above this line as phases complete -->

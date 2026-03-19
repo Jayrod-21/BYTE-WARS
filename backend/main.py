@@ -6,8 +6,8 @@ This is the main application file that sets up the FastAPI server with:
 - Database table creation on startup
 - CORS middleware for frontend communication
 
-Phase 1: Only health check is exposed. Battle engine runs via test script.
-Future phases will add champion CRUD, match orchestration, and more.
+Phase 1: Health check endpoint.
+Phase 3: Champion CRUD endpoints (POST, GET, PATCH, LIST).
 """
 
 import os
@@ -18,6 +18,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import engine, Base
+from routes.champion import router as champion_router
 
 
 # --- Application Lifespan ---
@@ -67,6 +68,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- Register API Routes ---
+app.include_router(champion_router, prefix="/api")
 
 # --- Redis Connection ---
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")

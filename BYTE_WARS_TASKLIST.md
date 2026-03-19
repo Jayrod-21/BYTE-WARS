@@ -52,19 +52,19 @@
 ---
 
 ## Phase 3 — Champion Builder
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Champion creation API endpoint (POST /champions)
-- [ ] System prompt input and storage (encrypted at rest)
-- [ ] Archetype selection (tank, assassin, mage, ranger, support)
-- [ ] Cross-archetype gear/skill selection logic
-- [ ] Gear slot and skill slot limits enforced
-- [ ] Base gear assignment on champion creation (permanent)
-- [ ] API key input and encrypted storage per champion
-- [ ] AI model selection (model string stored per champion)
-- [ ] Champion profile retrieval (GET /champions/{id})
-- [ ] Champion update endpoint (PATCH /champions/{id}) — no base gear modification
-- [ ] Validation: cannot exceed slot limits, cannot remove base gear
+- [x] Champion creation API endpoint (POST /champions)
+- [x] System prompt input and storage (encrypted at rest)
+- [x] Archetype selection (tank, assassin, mage, ranger, support)
+- [x] Cross-archetype gear/skill selection logic
+- [x] Gear slot and skill slot limits enforced
+- [x] Base gear assignment on champion creation (permanent)
+- [x] API key input and encrypted storage per champion
+- [x] AI model selection (model string stored per champion)
+- [x] Champion profile retrieval (GET /champions/{id})
+- [x] Champion update endpoint (PATCH /champions/{id}) — no base gear modification
+- [x] Validation: cannot exceed slot limits, cannot remove base gear
 
 ---
 

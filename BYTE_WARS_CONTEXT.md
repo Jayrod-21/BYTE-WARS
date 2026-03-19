@@ -112,7 +112,7 @@ heal               — cost 2, restores [10, 20] HP, requires endurance
 
 ## Current Phase
 
-**Current Phase:** Phase 2 — MCP Tool Action System (Complete)
-**Last Completed:** Phase 2 (2026-03-19)
-**Next Task:** Phase 3 — Champion Builder
+**Current Phase:** Phase 3 — Champion Builder (Complete)
+**Last Completed:** Phase 3 (2026-03-19)
+**Next Task:** Phase 4 — Match Orchestration
 **Blocked On:** Nothing currently.
