@@ -1,0 +1,201 @@
+# BYTE Wars — Full Phased Task List
+
+> Track progress by checking off tasks. Update BYTE_WARS_HISTORY.md when a phase completes.
+
+---
+
+## Phase 0 — Project Setup
+**Status:** ✅ Complete
+
+- [x] Define project concept and core mechanics
+- [x] Choose tech stack
+- [x] Define champion structure
+- [x] Define battle rules (Pathfinder 2e action economy)
+- [x] Create project documentation files
+- [x] Create GitHub repository
+- [x] Set up base folder structure
+
+---
+
+## Phase 1 — Battle Engine Core
+**Status:** ✅ Complete
+
+- [x] Docker Compose setup (FastAPI + PostgreSQL + Redis)
+- [x] Health check endpoint (GET /health)
+- [x] Champion data model (SQLAlchemy)
+- [x] Match data model
+- [x] Turn Manager (Pathfinder 2e 3-action economy)
+- [x] Initiative system (endurance + RNG)
+- [x] Damage Resolver (probabilistic, stat-modified)
+- [x] Defense modifier (endurance stat)
+- [x] Battle Engine loop (2-4 bots, 50-turn limit)
+- [x] Battle History logger (every action, roll, damage, HP change)
+- [x] Base MCP tool set as Python functions (5 actions)
+- [x] Mock bot (random action selector)
+- [x] Test script: 10 battles, summary report
+- [x] Balance check: no battle < 3 turns, < 20% hit time limit
+
+---
+
+## Phase 2 — MCP Tool Action System
+**Status:** 🔲 Not Started
+
+- [ ] Set up MCP server (Python MCP SDK)
+- [ ] Register base 5 actions as MCP tools
+- [ ] Tool schema: action_point_cost, damage_range, stat_requirement, target type
+- [ ] MCP tool call → Battle Engine resolver bridge
+- [ ] Dynamic tool registration (for future NFT skills)
+- [ ] Bot receives game state + available tools each turn
+- [ ] Bot response parsed and validated before execution
+- [ ] Test: real tool calls resolve correctly in a full match
+
+---
+
+## Phase 3 — Champion Builder
+**Status:** 🔲 Not Started
+
+- [ ] Champion creation API endpoint (POST /champions)
+- [ ] System prompt input and storage (encrypted at rest)
+- [ ] Archetype selection (tank, assassin, mage, ranger, support)
+- [ ] Cross-archetype gear/skill selection logic
+- [ ] Gear slot and skill slot limits enforced
+- [ ] Base gear assignment on champion creation (permanent)
+- [ ] API key input and encrypted storage per champion
+- [ ] AI model selection (model string stored per champion)
+- [ ] Champion profile retrieval (GET /champions/{id})
+- [ ] Champion update endpoint (PATCH /champions/{id}) — no base gear modification
+- [ ] Validation: cannot exceed slot limits, cannot remove base gear
+
+---
+
+## Phase 4 — Match Orchestration
+**Status:** 🔲 Not Started
+
+- [ ] Match creation endpoint (POST /matches)
+- [ ] Lobby system — accept 2-4 champions
+- [ ] Match status state machine (pending → active → complete | timed_out)
+- [ ] Real AI model integration — replace mock bot with actual API calls
+- [ ] Game state object passed to each bot each turn
+- [ ] Bot response timeout handling (if AI takes too long, random action used)
+- [ ] Multi-bot free-for-all resolution (1v1v1v1 target selection logic)
+- [ ] Time limit enforcement (wall clock + turn limit)
+- [ ] Winner determination logic
+- [ ] Match result storage
+- [ ] Async match execution (non-blocking)
+- [ ] Match history retrieval (GET /matches/{id})
+
+---
+
+## Phase 5 — Playback & Visualization System
+**Status:** 🔲 Not Started
+
+- [ ] Battle History → Playback Event format converter
+- [ ] Playback event types: move, attack, defend, skill_use, damage_taken, heal, death, match_end
+- [ ] Pixel art sprite system (champion avatars by archetype)
+- [ ] Arena environment assets (base arena, environmental hazards placeholder)
+- [ ] Stat bar overlays (HP bars, action points display)
+- [ ] Turn-by-turn animation sequencer
+- [ ] Playback speed controls (0.5x, 1x, 2x, fast-forward)
+- [ ] Match summary screen (winner, stats, damage dealt/taken)
+- [ ] Playback shareable link generation
+- [ ] Test: full match renders without errors, all actions visualized
+
+---
+
+## Phase 6 — Web Interface
+**Status:** 🔲 Not Started
+
+- [ ] React project setup (Expo for mobile-first)
+- [ ] User account creation and login (JWT auth)
+- [ ] Champion list screen
+- [ ] Champion creation / builder screen
+- [ ] Match lobby screen (create + join)
+- [ ] Playback viewer screen
+- [ ] Match history screen
+- [ ] User profile screen
+- [ ] Basic responsive layout (mobile viewport priority)
+- [ ] API integration (all screens wired to FastAPI backend)
+
+---
+
+## Phase 7 — Solana Wallet + NFT Stub Integration
+**Status:** 🔲 Not Started
+
+- [ ] Phantom wallet adapter integration (frontend)
+- [ ] Wallet connection screen
+- [ ] Link wallet address to user account
+- [ ] NFT data model (item type, stats, rarity, archetype, owner wallet)
+- [ ] NFT stub inventory (generate mock NFTs for testing)
+- [ ] Attach NFT to champion gear/skill slot
+- [ ] NFT gear stat bonuses applied in battle engine
+- [ ] NFT skill → MCP tool dynamic registration
+- [ ] NFT inventory screen
+- [ ] Test: NFT gear affects battle outcome correctly
+
+---
+
+## Phase 8 — Wagering System
+**Status:** 🔲 Not Started
+
+- [ ] Solana devnet setup and testing wallet
+- [ ] Escrow smart contract (Anchor framework)
+- [ ] Pre-match wager placement endpoint
+- [ ] Wager lock on match start
+- [ ] Platform fee deduction logic
+- [ ] Payout distribution on match completion
+- [ ] Refund logic for timed-out matches
+- [ ] Wager history per user
+- [ ] Wager display on match lobby and playback screens
+- [ ] Security audit checklist for escrow contract
+- [ ] Test on Solana devnet end-to-end
+
+---
+
+## Phase 9 — NFT Marketplace
+**Status:** 🔲 Not Started
+
+- [ ] Real NFT minting on Solana devnet (Metaplex)
+- [ ] NFT mint on champion win (loot chest mechanic)
+- [ ] Loot chest opening animation
+- [ ] Rarity tier system (common, uncommon, rare, legendary)
+- [ ] Loot table design (drop rates per tier)
+- [ ] NFT transfer between wallets
+- [ ] Marketplace listing (list NFT for sale)
+- [ ] Marketplace purchase flow (SOL payment)
+- [ ] NFT detail page (stats, history, rarity)
+- [ ] Marketplace browse + filter screen
+
+---
+
+## Phase 10 — Mobile Optimization
+**Status:** 🔲 Not Started
+
+- [ ] Decision: PWA vs React Native (finalize)
+- [ ] Mobile touch controls for all screens
+- [ ] Pixel art rendering performance optimization
+- [ ] Offline-tolerant playback (cache match data locally)
+- [ ] Push notifications (match ready, wager result)
+- [ ] App icon + splash screen
+- [ ] iOS + Android build testing (if React Native)
+- [ ] Lighthouse / performance audit (if PWA)
+- [ ] Beta test on real devices
+
+---
+
+## Phase 11 — Production Hardening & Deployment
+**Status:** 🔲 Not Started
+
+- [ ] Environment variable audit (no hardcoded secrets)
+- [ ] API key encryption review
+- [ ] Rate limiting on all API endpoints
+- [ ] Input validation and sanitization
+- [ ] HTTPS enforcement
+- [ ] Database backup strategy
+- [ ] Logging and monitoring setup
+- [ ] Load testing (simulated concurrent matches)
+- [ ] Legal review for wagering compliance
+- [ ] Privacy policy + Terms of Service
+- [ ] Solana mainnet migration (from devnet)
+- [ ] CI/CD pipeline setup
+- [ ] Production deployment
+- [ ] Launch checklist sign-off
