@@ -38,16 +38,16 @@
 ---
 
 ## Phase 2 — MCP Tool Action System
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Set up MCP server (Python MCP SDK)
-- [ ] Register base 5 actions as MCP tools
-- [ ] Tool schema: action_point_cost, damage_range, stat_requirement, target type
-- [ ] MCP tool call → Battle Engine resolver bridge
-- [ ] Dynamic tool registration (for future NFT skills)
-- [ ] Bot receives game state + available tools each turn
-- [ ] Bot response parsed and validated before execution
-- [ ] Test: real tool calls resolve correctly in a full match
+- [x] Set up MCP server (Python MCP SDK)
+- [x] Register base 5 actions as MCP tools
+- [x] Tool schema: action_point_cost, damage_range, stat_requirement, target type
+- [x] MCP tool call → Battle Engine resolver bridge
+- [x] Dynamic tool registration (for future NFT skills)
+- [x] Bot receives game state + available tools each turn
+- [x] Bot response parsed and validated before execution
+- [x] Test: real tool calls resolve correctly in a full match
 
 ---
 

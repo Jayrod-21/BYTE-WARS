@@ -74,4 +74,36 @@
 
 ---
 
+## [2026-03-19] — Phase 2: MCP Tool Action System
+
+**Status:** Complete
+**Session Model:** claude-opus-4-6
+
+**Work Done:**
+- [x] FastMCP server with all 5 base actions registered as callable MCP tools
+- [x] ToolRegistry: central registry with dynamic tool registration/unregistration
+- [x] ToolBridge: connects MCP tool calls to DamageResolver for resolution
+- [x] GameState: builds complete game state for bots each turn (own stats, opponents, tools, history)
+- [x] GameState.to_prompt(): converts game state to human-readable prompt for AI models
+- [x] BotResponseParser: validates bot responses, catches errors, auto-corrects targets, provides fallback
+- [x] Dynamic NFT skill registration and resolution verified in battle
+- [x] Battle engine refactored to use MCP pipeline (ToolBridge + BotResponseParser)
+- [x] 7 integration tests all passing (registry, bridge, game state, parser, server, full battle, dynamic tools)
+- [x] Phase 1 tests still pass (backward compatible)
+
+**Decisions Made:**
+- Renamed local `mcp/` package to `mcp_tools/` to avoid shadowing the installed MCP SDK
+- BotResponseParser accepts both JSON strings and Python lists (flexible for AI responses)
+- Invalid bot responses fall back to basic_strike on a random opponent (match never crashes)
+- GameState includes last 3 turns of history for tactical context
+- Tool schemas are simplified versions of full action defs (only fields bots need)
+
+**Open Issues / Blockers:**
+- None
+
+**Next Step:**
+- Phase 3: Champion Builder — CRUD API for champions with system prompt and gear management
+
+---
+
 <!-- Add new entries above this line as phases complete -->
