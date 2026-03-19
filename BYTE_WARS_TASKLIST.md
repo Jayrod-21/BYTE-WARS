@@ -69,20 +69,20 @@
 ---
 
 ## Phase 4 — Match Orchestration
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Match creation endpoint (POST /matches)
-- [ ] Lobby system — accept 2-4 champions
-- [ ] Match status state machine (pending → active → complete | timed_out)
-- [ ] Real AI model integration — replace mock bot with actual API calls
-- [ ] Game state object passed to each bot each turn
-- [ ] Bot response timeout handling (if AI takes too long, random action used)
-- [ ] Multi-bot free-for-all resolution (1v1v1v1 target selection logic)
-- [ ] Time limit enforcement (wall clock + turn limit)
-- [ ] Winner determination logic
-- [ ] Match result storage
-- [ ] Async match execution (non-blocking)
-- [ ] Match history retrieval (GET /matches/{id})
+- [x] Match creation endpoint (POST /matches)
+- [x] Lobby system — accept 2-4 champions
+- [x] Match status state machine (pending → active → complete | timed_out)
+- [x] Real AI model integration — replace mock bot with actual API calls
+- [x] Game state object passed to each bot each turn
+- [x] Bot response timeout handling (if AI takes too long, random action used)
+- [x] Multi-bot free-for-all resolution (1v1v1v1 target selection logic)
+- [x] Time limit enforcement (wall clock + turn limit)
+- [x] Winner determination logic
+- [x] Match result storage
+- [x] Async match execution (non-blocking)
+- [x] Match history retrieval (GET /matches/{id})
 
 ---
 

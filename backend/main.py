@@ -8,6 +8,7 @@ This is the main application file that sets up the FastAPI server with:
 
 Phase 1: Health check endpoint.
 Phase 3: Champion CRUD endpoints (POST, GET, PATCH, LIST).
+Phase 4: Match orchestration endpoints (POST, GET, START).
 """
 
 import os
@@ -19,6 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import engine, Base
 from routes.champion import router as champion_router
+from routes.match import router as match_router
 
 
 # --- Application Lifespan ---
@@ -71,6 +73,7 @@ app.add_middleware(
 
 # --- Register API Routes ---
 app.include_router(champion_router, prefix="/api")
+app.include_router(match_router, prefix="/api")
 
 # --- Redis Connection ---
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")

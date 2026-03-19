@@ -106,6 +106,34 @@
 
 ---
 
+## [2026-03-19] — Phase 4: Match Orchestration
+
+**Status:** Complete
+**Session Model:** claude-opus-4-6
+
+**Work Done:**
+- [x] AIBot class: real AI API integration for Claude, GPT, Gemini (OpenAI-compatible)
+- [x] Match service: lobby creation, state machine (pending → active → complete | timed_out)
+- [x] Match API routes: POST /matches, POST /matches/{id}/start, GET /matches/{id}, GET /matches
+- [x] Per-champion bot selection: AIBot for champions with API keys, MockBot fallback
+- [x] Bot response timeout: 12s async timeout, falls back to random actions
+- [x] Multi-bot free-for-all: tested 1v1, 1v1v1, and 1v1v1v1 matches
+- [x] Winner determination and full turn history storage
+- [x] Match data never leaks encrypted API keys
+- [x] 11 test groups all passing, all prior phases still green
+
+**Decisions Made:**
+- Battle execution is inline-awaited (not background task) for reliability
+- AI API calls use httpx async client with 10s timeout per call
+- Anthropic uses Messages API format; all others use OpenAI chat completions
+- JSON extraction from AI responses handles markdown code blocks and raw text
+- UUID type mismatch fixed between champion service (UUID) and battle engine (str)
+
+**Next Step:**
+- Phase 5: Playback & Visualization System
+
+---
+
 ## [2026-03-19] — Phase 3: Champion Builder
 
 **Status:** Complete

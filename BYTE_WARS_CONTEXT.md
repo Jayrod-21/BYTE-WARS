@@ -112,7 +112,7 @@ heal               — cost 2, restores [10, 20] HP, requires endurance
 
 ## Current Phase
 
-**Current Phase:** Phase 3 — Champion Builder (Complete)
-**Last Completed:** Phase 3 (2026-03-19)
-**Next Task:** Phase 4 — Match Orchestration
+**Current Phase:** Phase 4 — Match Orchestration (Complete)
+**Last Completed:** Phase 4 (2026-03-19)
+**Next Task:** Phase 5 — Playback & Visualization System
 **Blocked On:** Nothing currently.
