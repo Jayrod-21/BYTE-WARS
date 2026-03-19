@@ -32,12 +32,22 @@ async def lifespan(app: FastAPI):
     # Import models so SQLAlchemy knows about them when creating tables
     import models  # noqa: F401
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Try to create tables — if DB isn't available, log warning and continue
+    # (the /health endpoint will report DB status)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        import logging
+        logging.warning(f"Could not connect to database on startup: {e}")
+        logging.warning("Tables will be created when database becomes available.")
 
     yield  # App runs here
 
-    await engine.dispose()
+    try:
+        await engine.dispose()
+    except Exception:
+        pass
 
 
 # --- Create FastAPI App ---
