@@ -106,6 +106,55 @@
 
 ---
 
+## [2026-03-20] — Phase 8: Wagering System
+
+**Status:** Complete
+**Session Model:** claude-opus-4-6
+
+**Work Done:**
+- [x] Wager data model: Wager, EscrowAccount, WalletBalance dataclasses with full lifecycle states
+- [x] Simulated Solana devnet: stub tx hashes, PDA escrow addresses, wallet balances (100 SOL start)
+- [x] WagerService: place_wager(), cancel_wager(), lock_escrow(), distribute_payouts(), refund_all()
+- [x] Platform fee: 5% deduction from total pot before payout
+- [x] Proportional payout: winners split net pot proportional to their wager amounts
+- [x] Refund logic: full refund on timed-out/cancelled matches or when nobody bets on the winner
+- [x] Odds calculation: per-champion totals and implied payout multiplier
+- [x] Wager API routes: place, cancel, match wagers, user history, odds, escrow info, wallet balance, airdrop
+- [x] Match service integration: escrow locked on match start, payouts/refunds on match completion
+- [x] Frontend MatchLobbyPage: optional wager section with champion selector, amount input, odds display
+- [x] Frontend PlaybackPage: wager results section showing won/lost/refunded with SOL amounts
+- [x] Frontend WagerHistoryPage: P&L summary, wager list with match links
+- [x] API client: 7 new wager endpoint functions
+- [x] 12 test groups all passing, all prior phases green
+
+**Decisions Made:**
+- Simulated Solana (stub) — same pattern as Phase 7 NFTs; real Anchor contract in Phase 11
+- Wallets start with 100 SOL on devnet; airdrop endpoint for testing
+- One wager per user per match (prevents self-arbitrage)
+- Wagers can be cancelled before match starts (placed → cancelled)
+- Platform fee = 5% of total pot, applied at escrow lock time
+- If nobody bet on the winner, all wagers are refunded (prevents unfair loss)
+- MIN_WAGER = 0.01 SOL, MAX_WAGER = 100 SOL
+- Wager history sorted newest-first
+
+**Security Audit Checklist (for production Anchor contract):**
+- [ ] Escrow PDA derived correctly (no seed collision)
+- [ ] Only match creator can initialize escrow
+- [ ] Wager placement verifies signer owns the wallet
+- [ ] Escrow lock is atomic with match start
+- [ ] Payout instruction validates winner from match result
+- [ ] Refund instruction validates match timed_out status
+- [ ] Platform fee account is hardcoded (not user-supplied)
+- [ ] Re-entrancy protection on all fund transfers
+- [ ] Integer overflow protection on SOL arithmetic
+- [ ] Rate limiting on wager placement
+- [ ] Double-spend prevention (check tx uniqueness)
+
+**Next Step:**
+- Phase 9: NFT Marketplace (real minting, loot chests, marketplace)
+
+---
+
 ## [2026-03-20] — Phase 7: Solana Wallet + NFT Stub Integration
 
 **Status:** Complete

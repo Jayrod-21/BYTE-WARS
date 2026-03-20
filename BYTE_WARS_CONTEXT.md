@@ -112,7 +112,7 @@ heal               — cost 2, restores [10, 20] HP, requires endurance
 
 ## Current Phase
 
-**Current Phase:** Phase 7 — Solana Wallet + NFT Stub Integration (Complete)
-**Last Completed:** Phase 7 (2026-03-20)
-**Next Task:** Phase 8 — Wagering System (Solana escrow, wager placement, payouts)
+**Current Phase:** Phase 8 — Wagering System (Complete)
+**Last Completed:** Phase 8 (2026-03-20)
+**Next Task:** Phase 9 — NFT Marketplace (real minting, loot chests, marketplace)
 **Blocked On:** Nothing currently.

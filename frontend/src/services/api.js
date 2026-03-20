@@ -128,4 +128,48 @@ export function getPlaybackUrl(matchId) {
   return `${API_BASE}/playback/${matchId}/watch`;
 }
 
+// --- Wagers ---
+export async function placeWager(matchId, userId, walletAddress, championId, amountSol) {
+  return request('/wagers/place', {
+    method: 'POST',
+    body: JSON.stringify({
+      match_id: matchId,
+      user_id: userId,
+      wallet_address: walletAddress,
+      champion_id: championId,
+      amount_sol: amountSol,
+    }),
+  });
+}
+
+export async function cancelWager(wagerId, userId) {
+  return request(`/wagers/${wagerId}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId }),
+  });
+}
+
+export async function getMatchWagers(matchId) {
+  return request(`/wagers/match/${matchId}`);
+}
+
+export async function getUserWagers(userId) {
+  return request(`/wagers/user/${userId}`);
+}
+
+export async function getMatchOdds(matchId) {
+  return request(`/wagers/odds/${matchId}`);
+}
+
+export async function getWalletBalance(walletAddress) {
+  return request(`/wagers/wallet/${walletAddress}`);
+}
+
+export async function airdropSol(walletAddress, amountSol = 10) {
+  return request(`/wagers/wallet/${walletAddress}/airdrop`, {
+    method: 'POST',
+    body: JSON.stringify({ amount_sol: amountSol }),
+  });
+}
+
 export { getToken, getUser, setToken, setUser };

@@ -28,6 +28,7 @@ from mcp_tools.bot_response import BotResponseParser
 from engine.turn_manager import TurnManager
 from services.champion_service import decrypt_api_key
 from services.nft_service import NFTService
+from services.wager_service import WagerService as _WagerService
 
 
 # Match states
@@ -57,6 +58,7 @@ class MatchService:
     def __init__(self):
         self.registry = ToolRegistry()
         self.nft_service = NFTService()
+        self.wager_service = _WagerService()
 
     def create_match(
         self,
@@ -129,6 +131,9 @@ class MatchService:
         match_data["status"] = MATCH_ACTIVE
         match_data["started_at"] = datetime.now(timezone.utc).isoformat()
 
+        # Lock escrow — no more wagers accepted
+        self.wager_service.lock_escrow(match_id)
+
         # Execute battle (async but awaited — non-blocking for other requests)
         await self._execute_battle(match_id)
 
@@ -184,11 +189,20 @@ class MatchService:
             match_data["total_turns"] = history.total_turns
             match_data["resolved_at"] = datetime.now(timezone.utc).isoformat()
 
+            # Resolve wagers
+            if history.status == "complete" and history.winner_id:
+                self.wager_service.distribute_payouts(match_id, history.winner_id)
+            else:
+                # Timed out or no winner — refund all
+                self.wager_service.refund_all(match_id)
+
         except Exception as e:
             # If battle crashes, mark as timed_out with error info
             match_data["status"] = MATCH_TIMED_OUT
             match_data["resolved_at"] = datetime.now(timezone.utc).isoformat()
             match_data["error"] = str(e)
+            # Refund all wagers on crash
+            self.wager_service.refund_all(match_id)
 
         # Clean up task reference
         _running_tasks.pop(match_id, None)

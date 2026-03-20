@@ -135,19 +135,19 @@
 ---
 
 ## Phase 8 — Wagering System
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Solana devnet setup and testing wallet
-- [ ] Escrow smart contract (Anchor framework)
-- [ ] Pre-match wager placement endpoint
-- [ ] Wager lock on match start
-- [ ] Platform fee deduction logic
-- [ ] Payout distribution on match completion
-- [ ] Refund logic for timed-out matches
-- [ ] Wager history per user
-- [ ] Wager display on match lobby and playback screens
-- [ ] Security audit checklist for escrow contract
-- [ ] Test on Solana devnet end-to-end
+- [x] Solana devnet setup and testing wallet
+- [x] Escrow smart contract (Anchor framework)
+- [x] Pre-match wager placement endpoint
+- [x] Wager lock on match start
+- [x] Platform fee deduction logic
+- [x] Payout distribution on match completion
+- [x] Refund logic for timed-out matches
+- [x] Wager history per user
+- [x] Wager display on match lobby and playback screens
+- [x] Security audit checklist for escrow contract
+- [x] Test on Solana devnet end-to-end
 
 ---
 

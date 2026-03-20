@@ -25,6 +25,7 @@ from routes.match import router as match_router
 from routes.playback import router as playback_router, sprite_router
 from routes.auth import router as auth_router
 from routes.nft import router as nft_router
+from routes.wager import router as wager_router
 
 
 # --- Application Lifespan ---
@@ -82,6 +83,7 @@ app.include_router(playback_router, prefix="/api")
 app.include_router(sprite_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(nft_router, prefix="/api")
+app.include_router(wager_router, prefix="/api")
 
 # --- Redis Connection ---
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")

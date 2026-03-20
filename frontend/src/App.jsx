@@ -9,6 +9,7 @@ import MatchHistoryPage from './pages/MatchHistoryPage';
 import PlaybackPage from './pages/PlaybackPage';
 import ProfilePage from './pages/ProfilePage';
 import InventoryPage from './pages/InventoryPage';
+import WagerHistoryPage from './pages/WagerHistoryPage';
 import './App.css';
 
 function NavBar({ user, onLogout }) {
@@ -19,6 +20,7 @@ function NavBar({ user, onLogout }) {
         <Link to="/champions">Champions</Link>
         <Link to="/lobby">Battle</Link>
         <Link to="/inventory">Inventory</Link>
+        <Link to="/wagers">Wagers</Link>
         <Link to="/history">History</Link>
         {user ? (
           <>
@@ -60,6 +62,7 @@ function AppContent() {
           <Route path="/history" element={<MatchHistoryPage />} />
           <Route path="/playback/:matchId" element={<PlaybackPage />} />
           <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/wagers" element={<WagerHistoryPage />} />
           <Route path="/profile" element={<ProfilePage user={user} />} />
           <Route path="/" element={<Navigate to="/champions" />} />
         </Routes>
