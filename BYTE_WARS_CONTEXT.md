@@ -112,7 +112,7 @@ heal               — cost 2, restores [10, 20] HP, requires endurance
 
 ## Current Phase
 
-**Current Phase:** Phase 4 — Match Orchestration (Complete)
-**Last Completed:** Phase 4 (2026-03-19)
-**Next Task:** Phase 5 — Playback & Visualization System
+**Current Phase:** Phase 5 — Playback & Visualization (Complete)
+**Last Completed:** Phase 5 (2026-03-20)
+**Next Task:** Phase 6 — Web Interface
 **Blocked On:** Nothing currently.
