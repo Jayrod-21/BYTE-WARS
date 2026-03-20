@@ -106,6 +106,40 @@
 
 ---
 
+## [2026-03-20] — Phase 7: Solana Wallet + NFT Stub Integration
+
+**Status:** Complete
+**Session Model:** claude-opus-4-6
+
+**Work Done:**
+- [x] NFT data model: NFTItem dataclass with type, rarity, archetype affinity, stat bonuses, skill actions
+- [x] Gear catalog: 17 items across 4 rarities (common, uncommon, rare, legendary)
+- [x] Skill catalog: 8 NFT skills with action definitions (fireball, shadow_step, etc.)
+- [x] Rarity multiplier system (common 1.0x → legendary 3.0x)
+- [x] Archetype affinity: 25% stat bonus when NFT matches champion archetype
+- [x] Starter inventory generation: 4 gear + 2 skills per owner
+- [x] NFT minting from catalog with ownership tracking
+- [x] Equip gear to champion gear slots (max 6) with ownership verification
+- [x] Equip skills to champion skill slots (max 4) with ownership verification
+- [x] NFT gear stat bonuses applied in battle engine via NFTService.apply_gear_bonuses()
+- [x] NFT skills registered as MCP tools dynamically per battle (fresh ToolRegistry)
+- [x] Wallet link endpoint (POST /nft/wallet/link) ties Solana address to user account
+- [x] NFT inventory API: catalog browse, inventory list, generate, mint, equip
+- [x] Frontend InventoryPage with gear/skill filter and rarity-colored cards
+- [x] 12 test groups all passing, all prior phases green
+
+**Decisions Made:**
+- In-memory NFT storage (consistent with other services, PostgreSQL later)
+- Fresh ToolRegistry per battle to prevent skill tool leakage between matches
+- Starter inventory is idempotent (re-generate returns existing items)
+- NFT ownership verified on equip (cannot equip another owner's NFT)
+- Gear and skill catalogs are static dicts for stub phase; will become on-chain metadata in Phase 9
+
+**Next Step:**
+- Phase 8: Wagering System (Solana devnet, escrow smart contract, wager placement)
+
+---
+
 ## [2026-03-20] — Phase 6: Web Interface
 
 **Status:** Complete

@@ -27,6 +27,7 @@ from mcp_tools.game_state import build_game_state
 from mcp_tools.bot_response import BotResponseParser
 from engine.turn_manager import TurnManager
 from services.champion_service import decrypt_api_key
+from services.nft_service import NFTService
 
 
 # Match states
@@ -55,6 +56,7 @@ class MatchService:
 
     def __init__(self):
         self.registry = ToolRegistry()
+        self.nft_service = NFTService()
 
     def create_match(
         self,
@@ -210,14 +212,30 @@ class MatchService:
                 f"Battle requires 2-4 champions, got {len(champions_data)}"
             )
 
-        registry = self.registry
+        # Create a fresh registry for this battle (so NFT skills don't leak between matches)
+        registry = ToolRegistry()
         bridge = ToolBridge(registry)
         turn_manager = TurnManager()
         parser = BotResponseParser(registry)
         mock_bot = MockBot()
 
+        # Apply NFT gear bonuses and register NFT skills
+        enhanced_data = []
+        for champ in champions_data:
+            champ_copy = dict(champ)
+            # Apply gear stat bonuses (base gear + NFT gear)
+            champ_copy["stats"] = self.nft_service.apply_gear_bonuses(champ_copy)
+            # Register NFT skill actions as MCP tools
+            skill_actions = self.nft_service.get_skill_actions(champ_copy)
+            for action in skill_actions:
+                try:
+                    registry.register_tool(action)
+                except (ValueError, KeyError):
+                    pass  # Skip invalid or duplicate tools
+            enhanced_data.append(champ_copy)
+
         match_id = str(uuid.uuid4())
-        fighters = [BattleChampion.from_dict(c) for c in champions_data]
+        fighters = [BattleChampion.from_dict(c) for c in enhanced_data]
         all_tools = registry.get_all_tools()
         tool_schemas = registry.get_tool_schemas()
 

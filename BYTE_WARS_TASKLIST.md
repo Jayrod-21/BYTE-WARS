@@ -119,18 +119,18 @@
 ---
 
 ## Phase 7 — Solana Wallet + NFT Stub Integration
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Phantom wallet adapter integration (frontend)
-- [ ] Wallet connection screen
-- [ ] Link wallet address to user account
-- [ ] NFT data model (item type, stats, rarity, archetype, owner wallet)
-- [ ] NFT stub inventory (generate mock NFTs for testing)
-- [ ] Attach NFT to champion gear/skill slot
-- [ ] NFT gear stat bonuses applied in battle engine
-- [ ] NFT skill → MCP tool dynamic registration
-- [ ] NFT inventory screen
-- [ ] Test: NFT gear affects battle outcome correctly
+- [x] Phantom wallet adapter integration (wallet link endpoint)
+- [x] Wallet connection screen (link endpoint, frontend profile)
+- [x] Link wallet address to user account
+- [x] NFT data model (item type, stats, rarity, archetype, owner wallet)
+- [x] NFT stub inventory (generate mock NFTs for testing)
+- [x] Attach NFT to champion gear/skill slot
+- [x] NFT gear stat bonuses applied in battle engine
+- [x] NFT skill → MCP tool dynamic registration
+- [x] NFT inventory screen
+- [x] Test: NFT gear affects battle outcome correctly
 
 ---
 

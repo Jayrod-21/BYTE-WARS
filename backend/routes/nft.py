@@ -1,0 +1,128 @@
+"""
+routes/nft.py — NFT inventory and equipment API for BYTE Wars.
+
+- GET    /nft/inventory/{owner_id}      — Get NFT inventory
+- POST   /nft/inventory/{owner_id}/generate — Generate starter inventory
+- POST   /nft/mint                       — Mint a specific stub NFT
+- POST   /nft/equip-gear                 — Equip gear NFTs to a champion
+- POST   /nft/equip-skills              — Equip skill NFTs to a champion
+- GET    /nft/catalog/gear               — Browse gear catalog
+- GET    /nft/catalog/skills             — Browse skill catalog
+"""
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+
+from services.nft_service import NFTService
+from models.nft import GEAR_CATALOG, SKILL_CATALOG
+from routes.champion import _champions_store
+
+
+router = APIRouter(prefix="/nft", tags=["NFT"])
+_service = NFTService()
+
+
+class MintRequest(BaseModel):
+    owner_id: str
+    catalog_name: str
+    nft_type: str = Field(default="gear", description="'gear' or 'skill'")
+
+
+class EquipRequest(BaseModel):
+    champion_id: str
+    nft_ids: list[str]
+    owner_id: str
+
+
+@router.get("/inventory/{owner_id}")
+async def get_inventory(owner_id: str) -> list[dict]:
+    """Get all NFT items owned by a user."""
+    return _service.get_inventory(owner_id)
+
+
+@router.post("/inventory/{owner_id}/generate")
+async def generate_inventory(owner_id: str) -> list[dict]:
+    """Generate a starter inventory of stub NFTs for testing."""
+    return _service.generate_inventory(owner_id)
+
+
+@router.post("/mint")
+async def mint_nft(data: MintRequest) -> dict:
+    """Mint a specific stub NFT from the catalog."""
+    result = _service.mint_stub_nft(data.owner_id, data.catalog_name, data.nft_type)
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Item '{data.catalog_name}' not found in {data.nft_type} catalog",
+        )
+    return result
+
+
+@router.post("/equip-gear")
+async def equip_gear(data: EquipRequest) -> dict:
+    """Equip NFT gear items to a champion's gear slots."""
+    champion = _champions_store.get(data.champion_id)
+    if champion is None:
+        raise HTTPException(status_code=404, detail="Champion not found")
+
+    updated, errors = _service.equip_gear_to_champion(champion, data.nft_ids, data.owner_id)
+    if errors:
+        raise HTTPException(status_code=400, detail="; ".join(errors))
+
+    _champions_store[data.champion_id] = updated
+    return {"status": "ok", "gear_slots": updated["gear_slots"]}
+
+
+@router.post("/equip-skills")
+async def equip_skills(data: EquipRequest) -> dict:
+    """Equip NFT skill items to a champion's skill slots."""
+    champion = _champions_store.get(data.champion_id)
+    if champion is None:
+        raise HTTPException(status_code=404, detail="Champion not found")
+
+    updated, errors = _service.equip_skills_to_champion(champion, data.nft_ids, data.owner_id)
+    if errors:
+        raise HTTPException(status_code=400, detail="; ".join(errors))
+
+    _champions_store[data.champion_id] = updated
+    return {"status": "ok", "skill_slots": updated["skill_slots"]}
+
+
+@router.get("/catalog/gear")
+async def get_gear_catalog() -> list[dict]:
+    """Browse available gear items in the catalog."""
+    return GEAR_CATALOG
+
+
+@router.get("/catalog/skills")
+async def get_skill_catalog() -> list[dict]:
+    """Browse available skill items in the catalog."""
+    return SKILL_CATALOG
+
+
+# --- Wallet Connection ---
+
+class WalletLinkRequest(BaseModel):
+    user_id: str
+    wallet_address: str = Field(..., min_length=32, max_length=64)
+
+
+@router.post("/wallet/link")
+async def link_wallet(data: WalletLinkRequest) -> dict:
+    """
+    Link a Solana wallet address to a user account.
+
+    In Phase 7 this is a simple mapping. Phase 8+ will verify
+    wallet ownership via signature challenge.
+    """
+    from services.auth_service import _users_store
+    user = _users_store.get(data.user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user["wallet_address"] = data.wallet_address
+    return {
+        "status": "ok",
+        "user_id": data.user_id,
+        "wallet_address": data.wallet_address,
+    }
