@@ -106,6 +106,39 @@
 
 ---
 
+## [2026-03-20] — Phase 10: Mobile Optimization (PWA)
+
+**Status:** Complete
+**Session Model:** claude-opus-4-6
+
+**Work Done:**
+- [x] Decision: PWA (not React Native) — existing React+Vite app, no native features needed
+- [x] PWA manifest: standalone display, portrait, theme #0a0a1a, 192/512 icons
+- [x] Service worker: app shell caching, playback/match API cache (network-first), push notifications
+- [x] App icons: pixel art BW icon in SVG favicon + 192px + 512px PNG
+- [x] HTML meta tags: theme-color, viewport-fit=cover, apple-mobile-web-app-capable, no-zoom
+- [x] Mobile CSS: 44px min touch targets, 16px inputs (prevent iOS zoom), safe-area insets
+- [x] Nav: horizontal scroll on mobile, condensed link sizing
+- [x] Pixel art: image-rendering: pixelated/crisp-edges for SVG sprites
+- [x] GPU acceleration: will-change + translateZ(0) for animated elements
+- [x] Notification service: requestPermission, notifyMatchComplete, notifyWagerResult
+- [x] Match lobby triggers notification on match completion
+- [x] Service worker registered in main.jsx on load
+- [x] 10 test groups passing, all prior phases green
+
+**Decisions Made:**
+- PWA over React Native: game is turn-based, no camera/GPS/native APIs needed
+- Service worker caches playback + match data for offline re-watching
+- No-zoom viewport (max-scale=1, user-scalable=no) for app-like feel
+- 44px minimum touch targets per WCAG/Apple HIG guidelines
+- Safe-area-inset-* for notched devices (iPhone X+)
+- Push notifications are local-only for now; real push server in Phase 11
+
+**Next Step:**
+- Phase 11: Production Hardening & Deployment
+
+---
+
 ## [2026-03-20] — Phase 9: NFT Marketplace
 
 **Status:** Complete

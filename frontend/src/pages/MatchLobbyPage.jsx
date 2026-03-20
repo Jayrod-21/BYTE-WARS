@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listChampions, createMatch, startMatch, placeWager, getMatchOdds, getUser } from '../services/api';
+import { requestNotificationPermission, notifyMatchComplete } from '../services/notifications';
 
 export default function MatchLobbyPage() {
   const navigate = useNavigate();
@@ -69,7 +70,9 @@ export default function MatchLobbyPage() {
         const match = await createMatch(selected);
         setMatchId(match.id);
         setFighting(true);
-        await startMatch(match.id);
+        await requestNotificationPermission();
+        const result = await startMatch(match.id);
+        notifyMatchComplete(match.id, result.winner_name);
         navigate(`/playback/${match.id}`);
       } catch (err) {
         setError(err.message);
@@ -78,7 +81,9 @@ export default function MatchLobbyPage() {
     } else {
       setFighting(true);
       try {
-        await startMatch(matchId);
+        await requestNotificationPermission();
+        const result = await startMatch(matchId);
+        notifyMatchComplete(matchId, result.winner_name);
         navigate(`/playback/${matchId}`);
       } catch (err) {
         setError(err.message);

@@ -168,17 +168,16 @@
 ---
 
 ## Phase 10 — Mobile Optimization
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Decision: PWA vs React Native (finalize)
-- [ ] Mobile touch controls for all screens
-- [ ] Pixel art rendering performance optimization
-- [ ] Offline-tolerant playback (cache match data locally)
-- [ ] Push notifications (match ready, wager result)
-- [ ] App icon + splash screen
-- [ ] iOS + Android build testing (if React Native)
-- [ ] Lighthouse / performance audit (if PWA)
-- [ ] Beta test on real devices
+- [x] Decision: PWA vs React Native (finalize)
+- [x] Mobile touch controls for all screens
+- [x] Pixel art rendering performance optimization
+- [x] Offline-tolerant playback (cache match data locally)
+- [x] Push notifications (match ready, wager result)
+- [x] App icon + splash screen
+- [x] Lighthouse / performance audit (PWA)
+- [x] Beta test on real devices
 
 ---
 
