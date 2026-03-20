@@ -27,15 +27,15 @@ from engine.archetypes import (
 
 
 # --- Encryption Setup ---
-# Load encryption key from environment, or generate a dev-only default
-# WARNING: The default key is for development ONLY. Set ENCRYPTION_KEY in production.
+# In production, ENCRYPTION_KEY must be set. In dev, a random key is generated.
 _ENV_KEY = os.getenv("ENCRYPTION_KEY")
 if _ENV_KEY:
     _FERNET = Fernet(_ENV_KEY.encode())
 else:
-    # Generate a stable dev key (deterministic so restarts don't lose data)
     _DEV_KEY = Fernet.generate_key()
     _FERNET = Fernet(_DEV_KEY)
+    import logging
+    logging.warning("ENCRYPTION_KEY not set — using random dev key. Encrypted data won't survive restarts!")
 
 
 def encrypt_api_key(api_key: str) -> str:

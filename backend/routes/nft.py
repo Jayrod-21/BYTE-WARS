@@ -21,12 +21,13 @@ Phase 9:
 - GET    /nft/chests/{owner_id}         — Get user's loot chests
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 
 from services.nft_service import NFTService
 from models.nft import GEAR_CATALOG, SKILL_CATALOG
 from routes.champion import _champions_store
+from routes.auth import get_current_user
 
 
 router = APIRouter(prefix="/nft", tags=["NFT"])
@@ -58,7 +59,7 @@ async def generate_inventory(owner_id: str) -> list[dict]:
 
 
 @router.post("/mint")
-async def mint_nft(data: MintRequest) -> dict:
+async def mint_nft(data: MintRequest, user: dict = Depends(get_current_user)) -> dict:
     """Mint a specific stub NFT from the catalog."""
     result = _service.mint_stub_nft(data.owner_id, data.catalog_name, data.nft_type)
     if result is None:
@@ -70,7 +71,7 @@ async def mint_nft(data: MintRequest) -> dict:
 
 
 @router.post("/equip-gear")
-async def equip_gear(data: EquipRequest) -> dict:
+async def equip_gear(data: EquipRequest, user: dict = Depends(get_current_user)) -> dict:
     """Equip NFT gear items to a champion's gear slots."""
     champion = _champions_store.get(data.champion_id)
     if champion is None:
@@ -85,7 +86,7 @@ async def equip_gear(data: EquipRequest) -> dict:
 
 
 @router.post("/equip-skills")
-async def equip_skills(data: EquipRequest) -> dict:
+async def equip_skills(data: EquipRequest, user: dict = Depends(get_current_user)) -> dict:
     """Equip NFT skill items to a champion's skill slots."""
     champion = _champions_store.get(data.champion_id)
     if champion is None:
@@ -119,7 +120,7 @@ class WalletLinkRequest(BaseModel):
 
 
 @router.post("/wallet/link")
-async def link_wallet(data: WalletLinkRequest) -> dict:
+async def link_wallet(data: WalletLinkRequest, user: dict = Depends(get_current_user)) -> dict:
     """
     Link a Solana wallet address to a user account.
 
@@ -150,7 +151,7 @@ class TransferRequest(BaseModel):
 
 
 @router.post("/transfer")
-async def transfer_nft(data: TransferRequest) -> dict:
+async def transfer_nft(data: TransferRequest, user: dict = Depends(get_current_user)) -> dict:
     """Transfer an NFT from one owner to another."""
     try:
         nft = _service.transfer_nft(data.nft_id, data.from_owner, data.to_owner)
@@ -179,7 +180,7 @@ class CancelListingRequest(BaseModel):
 
 
 @router.post("/marketplace/list")
-async def create_listing(data: ListNFTRequest) -> dict:
+async def create_listing(data: ListNFTRequest, user: dict = Depends(get_current_user)) -> dict:
     """List an NFT for sale on the marketplace."""
     try:
         listing = _service.create_listing(data.nft_id, data.seller_id, data.price_sol)
@@ -189,7 +190,7 @@ async def create_listing(data: ListNFTRequest) -> dict:
 
 
 @router.post("/marketplace/{listing_id}/cancel")
-async def cancel_listing(listing_id: str, data: CancelListingRequest) -> dict:
+async def cancel_listing(listing_id: str, data: CancelListingRequest, user: dict = Depends(get_current_user)) -> dict:
     """Cancel a marketplace listing."""
     try:
         listing = _service.cancel_listing(listing_id, data.seller_id)
@@ -199,7 +200,7 @@ async def cancel_listing(listing_id: str, data: CancelListingRequest) -> dict:
 
 
 @router.post("/marketplace/{listing_id}/buy")
-async def buy_listing(listing_id: str, data: BuyNFTRequest) -> dict:
+async def buy_listing(listing_id: str, data: BuyNFTRequest, user: dict = Depends(get_current_user)) -> dict:
     """Purchase an NFT from the marketplace."""
     try:
         listing, nft = _service.purchase_listing(listing_id, data.buyer_id, data.buyer_wallet)

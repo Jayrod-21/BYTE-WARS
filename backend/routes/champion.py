@@ -11,11 +11,13 @@ All endpoints validate input via Pydantic schemas and enforce the
 core rules: slot limits, base gear protection, API key encryption.
 """
 
+import re
 import uuid
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
 from schemas.champion import ChampionCreate, ChampionUpdate, ChampionResponse
 from services.champion_service import ChampionService
+from routes.auth import get_current_user
 
 
 # Create the router for champion endpoints
@@ -29,8 +31,15 @@ _champions_store: dict[str, dict] = {}
 _service = ChampionService()
 
 
+def _sanitize_text(text: str) -> str:
+    """Strip HTML tags and control characters from user input."""
+    text = re.sub(r"<[^>]+>", "", text)  # Remove HTML tags
+    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", text)  # Remove control chars
+    return text.strip()
+
+
 @router.post("", response_model=ChampionResponse, status_code=201)
-async def create_champion(data: ChampionCreate) -> dict:
+async def create_champion(data: ChampionCreate, user: dict = Depends(get_current_user)) -> dict:
     """
     Create a new champion.
 
@@ -43,11 +52,15 @@ async def create_champion(data: ChampionCreate) -> dict:
     Returns:
         The created champion's full profile (API key redacted).
     """
+    # Sanitize user-provided text
+    sanitized_name = _sanitize_text(data.name)
+    sanitized_prompt = _sanitize_text(data.system_prompt) if data.system_prompt else ""
+
     try:
         champion_data = _service.build_champion_data(
-            name=data.name,
+            name=sanitized_name,
             archetype=data.archetype,
-            system_prompt=data.system_prompt,
+            system_prompt=sanitized_prompt,
             gear_slots=data.gear_slots,
             skill_slots=data.skill_slots,
             api_key=data.api_key,
@@ -56,6 +69,9 @@ async def create_champion(data: ChampionCreate) -> dict:
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+    # Link champion to authenticated user
+    champion_data["owner_user_id"] = user["id"]
 
     # Store in memory (Phase 4 will use PostgreSQL)
     champion_id = str(champion_data["id"])
@@ -86,7 +102,7 @@ async def get_champion(champion_id: str) -> dict:
 
 
 @router.patch("/{champion_id}", response_model=ChampionResponse)
-async def update_champion(champion_id: str, data: ChampionUpdate) -> dict:
+async def update_champion(champion_id: str, data: ChampionUpdate, user: dict = Depends(get_current_user)) -> dict:
     """
     Update an existing champion.
 
@@ -110,6 +126,10 @@ async def update_champion(champion_id: str, data: ChampionUpdate) -> dict:
     champion = _champions_store.get(champion_id)
     if champion is None:
         raise HTTPException(status_code=404, detail=f"Champion '{champion_id}' not found")
+
+    # Ownership check — only the owner can update their champion
+    if champion.get("owner_user_id") and champion["owner_user_id"] != user["id"]:
+        raise HTTPException(status_code=403, detail="You do not own this champion.")
 
     # Build updates dict from non-None fields
     updates = data.model_dump(exclude_unset=True)

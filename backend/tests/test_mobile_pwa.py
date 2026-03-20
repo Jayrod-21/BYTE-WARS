@@ -175,12 +175,14 @@ async def run_tests():
         })
         assert resp.status_code == 201
         user_id = resp.json()["user"]["id"]
+        token = resp.json()["token"]
+        auth_headers = {"Authorization": f"Bearer {token}"}
         print("  PASS: Auth registration")
 
         # Champion CRUD
         resp = await client.post("/api/champions", json={
             "name": "PWA Champion", "archetype": "mage",
-        })
+        }, headers=auth_headers)
         assert resp.status_code == 201
         champ_id = resp.json()["id"]
 
@@ -191,17 +193,17 @@ async def run_tests():
         # Create second champion for match
         resp = await client.post("/api/champions", json={
             "name": "PWA Opponent", "archetype": "tank",
-        })
+        }, headers=auth_headers)
         champ2_id = resp.json()["id"]
 
         # Match + playback
         resp = await client.post("/api/matches", json={
             "champion_ids": [champ_id, champ2_id],
-        })
+        }, headers=auth_headers)
         assert resp.status_code == 201
         match_id = resp.json()["id"]
 
-        resp = await client.post(f"/api/matches/{match_id}/start")
+        resp = await client.post(f"/api/matches/{match_id}/start", headers=auth_headers)
         assert resp.status_code == 200
         assert resp.json()["status"] in ("complete", "timed_out")
         print("  PASS: Match execution")

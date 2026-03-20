@@ -12,11 +12,14 @@ Provides wagering functionality:
 - POST   /wagers/wallet/{address}/airdrop — Airdrop devnet SOL (testing)
 """
 
-from fastapi import APIRouter, HTTPException
+import os
+
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 
 from services.wager_service import WagerService
 from services.match_service import MatchService
+from routes.auth import get_current_user
 
 
 router = APIRouter(prefix="/wagers", tags=["Wagers"])
@@ -44,7 +47,7 @@ class AirdropRequest(BaseModel):
 
 
 @router.post("/place")
-async def place_wager(data: PlaceWagerRequest) -> dict:
+async def place_wager(data: PlaceWagerRequest, user: dict = Depends(get_current_user)) -> dict:
     """
     Place a wager on a champion in a pending match.
 
@@ -73,7 +76,7 @@ async def place_wager(data: PlaceWagerRequest) -> dict:
 
 
 @router.post("/{wager_id}/cancel")
-async def cancel_wager(wager_id: str, data: CancelWagerRequest) -> dict:
+async def cancel_wager(wager_id: str, data: CancelWagerRequest, user: dict = Depends(get_current_user)) -> dict:
     """Cancel a placed (not yet locked) wager. Funds are returned."""
     try:
         wager = _wager_service.cancel_wager(wager_id, data.user_id)
@@ -148,8 +151,11 @@ async def airdrop_sol(wallet_address: str, data: AirdropRequest) -> dict:
     """
     Airdrop devnet SOL to a wallet (testing only).
 
-    In production, this endpoint would be removed.
+    Disabled in production — returns 403.
     """
+    if os.getenv("BYTE_WARS_ENV") == "production":
+        raise HTTPException(status_code=403, detail="Airdrop is disabled in production.")
+
     wallet = _wager_service.get_or_create_wallet(wallet_address)
     wallet.balance_sol += data.amount_sol
 

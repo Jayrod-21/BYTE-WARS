@@ -16,7 +16,15 @@ import jwt
 
 
 # JWT configuration
-JWT_SECRET = os.getenv("JWT_SECRET", "byte-wars-dev-secret-change-in-production")
+_jwt_secret_env = os.getenv("JWT_SECRET")
+if _jwt_secret_env:
+    JWT_SECRET = _jwt_secret_env
+else:
+    # Dev-only: generate a random secret. In production, JWT_SECRET must be set.
+    import secrets as _secrets
+    JWT_SECRET = _secrets.token_urlsafe(64)
+    import logging
+    logging.warning("JWT_SECRET not set — using random dev secret. Set JWT_SECRET in production!")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 

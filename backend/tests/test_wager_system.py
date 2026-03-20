@@ -44,28 +44,32 @@ async def run_tests():
     transport = ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
 
-        # Setup: create champions for testing
-        champ_ids = []
-        for name, arch in [("Wager Tank", "tank"), ("Wager Assassin", "assassin"),
-                           ("Wager Mage", "mage")]:
-            resp = await client.post("/api/champions", json={
-                "name": name, "archetype": arch,
-            })
-            assert resp.status_code == 201
-            champ_ids.append(resp.json()["id"])
-
-        # Setup: create a user
+        # Setup: create users first (needed for auth tokens)
         resp = await client.post("/api/auth/register", json={
             "username": "bettor1", "password": "secure123",
         })
         assert resp.status_code == 201
         user1_id = resp.json()["user"]["id"]
+        token1 = resp.json()["token"]
+        auth1 = {"Authorization": f"Bearer {token1}"}
 
         resp = await client.post("/api/auth/register", json={
             "username": "bettor2", "password": "secure123",
         })
         assert resp.status_code == 201
         user2_id = resp.json()["user"]["id"]
+        token2 = resp.json()["token"]
+        auth2 = {"Authorization": f"Bearer {token2}"}
+
+        # Setup: create champions for testing (requires auth)
+        champ_ids = []
+        for name, arch in [("Wager Tank", "tank"), ("Wager Assassin", "assassin"),
+                           ("Wager Mage", "mage")]:
+            resp = await client.post("/api/champions", json={
+                "name": name, "archetype": arch,
+            }, headers=auth1)
+            assert resp.status_code == 201
+            champ_ids.append(resp.json()["id"])
 
         wallet1 = f"devnet_{user1_id[:8]}"
         wallet2 = f"devnet_{user2_id[:8]}"
@@ -89,7 +93,7 @@ async def run_tests():
         # Create a match first
         resp = await client.post("/api/matches", json={
             "champion_ids": [champ_ids[0], champ_ids[1]],
-        })
+        }, headers=auth1)
         assert resp.status_code == 201
         match1_id = resp.json()["id"]
 
@@ -100,7 +104,7 @@ async def run_tests():
             "wallet_address": wallet1,
             "champion_id": champ_ids[0],
             "amount_sol": 1.5,
-        })
+        }, headers=auth1)
         assert resp.status_code == 200
         wager1 = resp.json()
         assert wager1["amount_sol"] == 1.5
@@ -128,7 +132,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[0],
             "amount_sol": 0.001,
-        })
+        }, headers=auth2)
         assert resp.status_code == 400
         assert "Minimum" in resp.json()["detail"]
         print("  PASS: Minimum wager enforced")
@@ -140,7 +144,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[0],
             "amount_sol": 200.0,
-        })
+        }, headers=auth2)
         assert resp.status_code == 400
         assert "Maximum" in resp.json()["detail"]
         print("  PASS: Maximum wager enforced")
@@ -152,7 +156,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[2],  # Not in this match
             "amount_sol": 1.0,
-        })
+        }, headers=auth2)
         assert resp.status_code == 400
         assert "not in this match" in resp.json()["detail"]
         print("  PASS: Champion not in match rejected")
@@ -164,7 +168,7 @@ async def run_tests():
             "wallet_address": wallet1,
             "champion_id": champ_ids[1],
             "amount_sol": 1.0,
-        })
+        }, headers=auth1)
         assert resp.status_code == 400
         assert "already have" in resp.json()["detail"]
         print("  PASS: Duplicate wager rejected")
@@ -176,7 +180,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[0],
             "amount_sol": 1.0,
-        })
+        }, headers=auth2)
         assert resp.status_code == 404
         print("  PASS: Non-existent match rejected")
 
@@ -191,14 +195,14 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[1],
             "amount_sol": 2.0,
-        })
+        }, headers=auth2)
         assert resp.status_code == 200
         wager2_id = resp.json()["id"]
 
         # Cancel it
         resp = await client.post(f"/api/wagers/{wager2_id}/cancel", json={
             "user_id": user2_id,
-        })
+        }, headers=auth2)
         assert resp.status_code == 200
         assert resp.json()["status"] == "cancelled"
         print("  PASS: Wager cancelled")
@@ -211,7 +215,7 @@ async def run_tests():
         # Cannot cancel someone else's wager
         resp = await client.post(f"/api/wagers/{wager1_id}/cancel", json={
             "user_id": user2_id,
-        })
+        }, headers=auth2)
         assert resp.status_code == 400
         assert "own wagers" in resp.json()["detail"]
         print("  PASS: Cannot cancel other user's wager")
@@ -227,7 +231,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[1],
             "amount_sol": 3.0,
-        })
+        }, headers=auth2)
         assert resp.status_code == 200
 
         # Check escrow before match start
@@ -239,7 +243,7 @@ async def run_tests():
         print(f"  PASS: Escrow open, pot = {escrow['total_pot_sol']} SOL")
 
         # Start match (locks escrow)
-        resp = await client.post(f"/api/matches/{match1_id}/start")
+        resp = await client.post(f"/api/matches/{match1_id}/start", headers=auth1)
         assert resp.status_code == 200
         match_result = resp.json()
         assert match_result["status"] in ("complete", "timed_out")
@@ -293,7 +297,7 @@ async def run_tests():
         # Create a new match and wager
         resp = await client.post("/api/matches", json={
             "champion_ids": [champ_ids[0], champ_ids[2]],
-        })
+        }, headers=auth1)
         match2_id = resp.json()["id"]
 
         resp = await client.post("/api/wagers/place", json={
@@ -302,7 +306,7 @@ async def run_tests():
             "wallet_address": wallet1,
             "champion_id": champ_ids[0],
             "amount_sol": 5.0,
-        })
+        }, headers=auth1)
         assert resp.status_code == 200
 
         # Lock and then refund
@@ -320,7 +324,7 @@ async def run_tests():
         # Create a new match with multiple wagers
         resp = await client.post("/api/matches", json={
             "champion_ids": [champ_ids[0], champ_ids[1]],
-        })
+        }, headers=auth1)
         match3_id = resp.json()["id"]
 
         # User1 bets 2 SOL on champion 0
@@ -330,7 +334,7 @@ async def run_tests():
             "wallet_address": wallet1,
             "champion_id": champ_ids[0],
             "amount_sol": 2.0,
-        })
+        }, headers=auth1)
         assert resp.status_code == 200
 
         # User2 bets 8 SOL on champion 1
@@ -340,7 +344,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[1],
             "amount_sol": 8.0,
-        })
+        }, headers=auth2)
         assert resp.status_code == 200
 
         # Check odds
@@ -413,7 +417,7 @@ async def run_tests():
         # Fresh match
         resp = await client.post("/api/matches", json={
             "champion_ids": [champ_ids[0], champ_ids[1]],
-        })
+        }, headers=auth1)
         match4_id = resp.json()["id"]
 
         # Place wagers
@@ -423,7 +427,7 @@ async def run_tests():
             "wallet_address": wallet1,
             "champion_id": champ_ids[0],
             "amount_sol": 10.0,
-        })
+        }, headers=auth1)
         assert resp.status_code == 200
 
         resp = await client.post("/api/wagers/place", json={
@@ -432,7 +436,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[1],
             "amount_sol": 10.0,
-        })
+        }, headers=auth2)
         assert resp.status_code == 200
 
         # Verify escrow
@@ -441,7 +445,7 @@ async def run_tests():
         assert resp.json()["status"] == "open"
 
         # Start match (locks escrow, runs battle, distributes payouts)
-        resp = await client.post(f"/api/matches/{match4_id}/start")
+        resp = await client.post(f"/api/matches/{match4_id}/start", headers=auth1)
         assert resp.status_code == 200
         result = resp.json()
 

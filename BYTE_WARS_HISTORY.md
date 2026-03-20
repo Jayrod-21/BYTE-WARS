@@ -374,4 +374,69 @@
 
 ---
 
+## [2026-03-20] — Phase 11: Production Hardening & Deployment
+
+**Status:** Complete
+**Session Model:** claude-opus-4-6
+
+**What Was Built:**
+
+1. **Security Headers Middleware** — X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy on all responses. HSTS in production only.
+
+2. **Rate Limiting Middleware** — In-memory per-IP sliding window. General: 120 req/60s, Auth: 10 req/60s. Returns 429 on limit exceeded.
+
+3. **Request Logging Middleware** — Logs method, path, status code, and duration (ms) for all API and health requests.
+
+4. **Auth-Protected Mutation Endpoints** — All POST/PATCH endpoints now require JWT via `get_current_user` dependency: champion create/update, match create/start, wager place/cancel, NFT mint/equip/transfer, marketplace list/cancel/buy, wallet link. Read-only endpoints remain public.
+
+5. **Ownership Verification** — Champions linked to authenticated user via `owner_user_id`. Update endpoint rejects modifications by non-owners (403).
+
+6. **Input Sanitization** — `_sanitize_text()` strips HTML tags and control characters from user-provided text (champion names, system prompts).
+
+7. **Environment-Aware Configuration:**
+   - `BYTE_WARS_ENV` (development|staging|production)
+   - Production: restricted CORS (specific origins), docs disabled, HSTS enabled
+   - Production: JWT_SECRET and ENCRYPTION_KEY required or startup fails
+   - Dev: permissive CORS, random dev secrets with warnings
+
+8. **Airdrop Endpoint Secured** — Returns 403 in production mode.
+
+9. **Secret Management:**
+   - JWT_SECRET: random `token_urlsafe(64)` in dev with warning log
+   - ENCRYPTION_KEY: random Fernet key in dev with warning log
+   - No hardcoded fallbacks anywhere
+
+10. **Production Docker Config** — `docker-compose.prod.yml` override:
+    - 4 uvicorn workers
+    - No host volume mounts
+    - DB/Redis ports not exposed
+    - Memory limits (512M backend)
+    - Redis maxmemory policy (allkeys-lru)
+
+**Files Created/Modified:**
+- `backend/main.py` — Complete rewrite (middlewares, env config, CORS, logging)
+- `backend/routes/champion.py` — Auth dependency, ownership check, input sanitization
+- `backend/routes/match.py` — Auth dependency on create/start
+- `backend/routes/wager.py` — Auth dependency on place/cancel, airdrop prod guard
+- `backend/routes/nft.py` — Auth dependency on all mutation endpoints
+- `backend/services/auth_service.py` — Random dev secret (no hardcoded fallback)
+- `backend/services/champion_service.py` — Encryption key warning
+- `docker-compose.prod.yml` — NEW (production override)
+- `backend/tests/test_production_hardening.py` — NEW (64 tests)
+- `backend/tests/test_wager_system.py` — Updated for auth headers
+- `backend/tests/test_marketplace.py` — Updated for auth headers
+- `backend/tests/test_mobile_pwa.py` — Updated for auth headers
+
+**Test Results:**
+- Phase 11: 64/64 passed
+- Phase 10: All passed
+- Phase 9: All passed
+- Phase 8: All passed
+- MCP Integration: 7/7 passed
+
+**Key Decision:**
+- Auth is required on write endpoints but not reads — keeps the API accessible for viewing while protecting mutations. This matches the game's spectator-friendly design.
+
+---
+
 <!-- Add new entries above this line as phases complete -->
