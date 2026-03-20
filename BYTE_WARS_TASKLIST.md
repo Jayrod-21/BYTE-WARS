@@ -103,18 +103,18 @@
 ---
 
 ## Phase 6 — Web Interface
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] React project setup (Expo for mobile-first)
-- [ ] User account creation and login (JWT auth)
-- [ ] Champion list screen
-- [ ] Champion creation / builder screen
-- [ ] Match lobby screen (create + join)
-- [ ] Playback viewer screen
-- [ ] Match history screen
-- [ ] User profile screen
-- [ ] Basic responsive layout (mobile viewport priority)
-- [ ] API integration (all screens wired to FastAPI backend)
+- [x] React project setup (Vite + React Router, mobile-first CSS)
+- [x] User account creation and login (JWT auth with bcrypt)
+- [x] Champion list screen (with archetype filtering)
+- [x] Champion creation / builder screen (archetype selector, prompt, API key)
+- [x] Match lobby screen (select 2-4 champions, fight button)
+- [x] Playback viewer screen (embedded HTML viewer + stats toggle)
+- [x] Match history screen (sorted by date, watch playback links)
+- [x] User profile screen (with /auth/me endpoint)
+- [x] Basic responsive layout (mobile viewport priority)
+- [x] API integration (all screens wired to FastAPI backend)
 
 ---
 

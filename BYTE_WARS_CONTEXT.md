@@ -112,7 +112,7 @@ heal               — cost 2, restores [10, 20] HP, requires endurance
 
 ## Current Phase
 
-**Current Phase:** Phase 5 — Playback & Visualization (Complete)
-**Last Completed:** Phase 5 (2026-03-20)
-**Next Task:** Phase 6 — Web Interface
+**Current Phase:** Phase 6 — Web Interface (Complete)
+**Last Completed:** Phase 6 (2026-03-20)
+**Next Task:** Phase 7 — NFT Gear & Skills (Solana/Metaplex)
 **Blocked On:** Nothing currently.

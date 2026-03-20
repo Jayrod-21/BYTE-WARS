@@ -106,6 +106,37 @@
 
 ---
 
+## [2026-03-20] — Phase 6: Web Interface
+
+**Status:** Complete
+**Session Model:** claude-opus-4-6
+
+**Work Done:**
+- [x] JWT auth: registration, login, token validation, protected /auth/me endpoint
+- [x] React frontend (Vite): 7 pages with React Router
+- [x] Login/Register page with toggle and error handling
+- [x] Champion list page with archetype filtering
+- [x] Champion builder page with archetype selector, system prompt, AI model, API key
+- [x] Match lobby page: select 2-4 champions, fight button with auto-navigation
+- [x] Playback viewer page: embedded HTML viewer with stats toggle
+- [x] Match history page: sorted by date, status badges, watch playback links
+- [x] Profile page with authenticated user info
+- [x] Mobile-first responsive CSS (dark theme, monospace font)
+- [x] API client with token management and proxy config
+- [x] 8 test groups all passing, all prior phases green
+
+**Decisions Made:**
+- Vite + React (not Expo) for Phase 6 — web-first, Expo for mobile in later phase
+- JWT with bcrypt password hashing, 24h token expiration
+- Dark cyberpunk theme matching the playback viewer aesthetic
+- Vite proxy to backend during dev (`/api` → `localhost:8000`)
+- Frontend builds to `frontend/dist/` (252KB gzipped)
+
+**Next Step:**
+- Phase 7: NFT Gear & Skills (Solana/Metaplex)
+
+---
+
 ## [2026-03-20] — Phase 5: Playback & Visualization System
 
 **Status:** Complete
