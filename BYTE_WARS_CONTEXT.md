@@ -112,7 +112,7 @@ heal               — cost 2, restores [10, 20] HP, requires endurance
 
 ## Current Phase
 
-**Current Phase:** Phase 8 — Wagering System (Complete)
-**Last Completed:** Phase 8 (2026-03-20)
-**Next Task:** Phase 9 — NFT Marketplace (real minting, loot chests, marketplace)
+**Current Phase:** Phase 9 — NFT Marketplace (Complete)
+**Last Completed:** Phase 9 (2026-03-20)
+**Next Task:** Phase 10 — Mobile Optimization (PWA vs React Native)
 **Blocked On:** Nothing currently.

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getPlayback, getPlaybackUrl, getMatchWagers } from '../services/api';
+import { getPlayback, getPlaybackUrl, getMatchWagers, getMatch } from '../services/api';
 
 const STATUS_LABELS = {
   placed: 'Pending',
@@ -25,6 +25,7 @@ export default function PlaybackPage() {
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState('embedded'); // embedded or data
   const [wagers, setWagers] = useState([]);
+  const [matchData, setMatchData] = useState(null);
 
   useEffect(() => {
     getPlayback(matchId)
@@ -34,7 +35,11 @@ export default function PlaybackPage() {
 
     getMatchWagers(matchId)
       .then(setWagers)
-      .catch(() => {});  // Wagers are optional
+      .catch(() => {});
+
+    getMatch(matchId)
+      .then(setMatchData)
+      .catch(() => {});
   }, [matchId]);
 
   if (loading) return <div className="loading">Loading playback...</div>;
@@ -153,6 +158,47 @@ export default function PlaybackPage() {
                       </span>
                     </div>
                   ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Loot Chest Drop */}
+          {matchData?.loot_chest_items && matchData.loot_chest_items.length > 0 && (
+            <>
+              <h2 style={{ color: 'var(--warning)', fontSize: '1.1em', margin: '16px 0 8px' }}>Loot Chest Drop</h2>
+              <div className="card" style={{ borderColor: 'var(--warning)' }}>
+                <div style={{ textAlign: 'center', marginBottom: 12, color: 'var(--warning)' }}>
+                  <span style={{ fontSize: '2em' }}>&#x1F381;</span>
+                  <div style={{ fontSize: '0.85em' }}>Winner received {matchData.loot_chest_items.length} items!</div>
+                </div>
+                <div className="grid grid-2" style={{ gap: 8 }}>
+                  {matchData.loot_chest_items.map((item, idx) => {
+                    const RARITY_COLORS = {
+                      common: '#aaaaaa', uncommon: '#44ff44',
+                      rare: '#4488ff', legendary: '#ffaa00',
+                    };
+                    return (
+                      <div key={idx} style={{
+                        padding: '8px',
+                        border: `1px solid ${RARITY_COLORS[item.rarity] || '#333'}`,
+                        borderRadius: 4,
+                        fontSize: '0.85em',
+                      }}>
+                        <div className="flex flex-between">
+                          <span style={{ textTransform: 'capitalize' }}>
+                            {item.name.replace(/_/g, ' ')}
+                          </span>
+                          <span style={{ color: RARITY_COLORS[item.rarity], fontSize: '0.8em', textTransform: 'uppercase' }}>
+                            {item.rarity}
+                          </span>
+                        </div>
+                        <div style={{ color: 'var(--text-dim)', fontSize: '0.8em' }}>
+                          {item.nft_type} | {item.archetype_affinity}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </>

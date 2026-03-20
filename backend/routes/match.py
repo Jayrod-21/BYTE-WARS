@@ -45,6 +45,8 @@ class MatchResponse(BaseModel):
     created_at: str | None
     started_at: str | None
     resolved_at: str | None
+    loot_chest_id: str | None = None
+    loot_chest_items: list[dict] = []
 
 
 @router.post("", response_model=MatchResponse, status_code=201)

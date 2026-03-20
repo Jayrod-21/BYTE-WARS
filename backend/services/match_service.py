@@ -192,6 +192,15 @@ class MatchService:
             # Resolve wagers
             if history.status == "complete" and history.winner_id:
                 self.wager_service.distribute_payouts(match_id, history.winner_id)
+                # Award loot chest to winner
+                winner_champ = next(
+                    (c for c in champion_data_list if str(c["id"]) == history.winner_id),
+                    None,
+                )
+                winner_owner = winner_champ.get("owner_user_id", history.winner_id) if winner_champ else history.winner_id
+                chest = self.nft_service.award_loot_chest(match_id, winner_owner)
+                match_data["loot_chest_id"] = chest.id
+                match_data["loot_chest_items"] = chest.items
             else:
                 # Timed out or no winner — refund all
                 self.wager_service.refund_all(match_id)
@@ -462,6 +471,8 @@ class MatchService:
             "created_at": match_data.get("created_at"),
             "started_at": match_data.get("started_at"),
             "resolved_at": match_data.get("resolved_at"),
+            "loot_chest_id": match_data.get("loot_chest_id"),
+            "loot_chest_items": match_data.get("loot_chest_items", []),
         }
 
 

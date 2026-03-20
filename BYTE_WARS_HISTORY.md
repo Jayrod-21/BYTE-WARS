@@ -106,6 +106,43 @@
 
 ---
 
+## [2026-03-20] — Phase 9: NFT Marketplace
+
+**Status:** Complete
+**Session Model:** claude-opus-4-6
+
+**Work Done:**
+- [x] Loot table system: drop rates per rarity (common 50%, uncommon 30%, rare 15%, legendary 5%)
+- [x] Loot chest generation: 3 items per chest, 70% gear / 30% skill mix
+- [x] Loot chest awarded on match win: integrated into match_service._execute_battle()
+- [x] Loot chest display: PlaybackPage shows chest items, InventoryPage has Chests tab
+- [x] NFT transfer: transfer_nft() moves ownership between users with inventory update
+- [x] Marketplace listing: create_listing() with ownership check and duplicate prevention
+- [x] Marketplace cancellation: cancel_listing() with seller verification
+- [x] Marketplace purchase: purchase_listing() with SOL payment, NFT transfer, seller credit
+- [x] Marketplace browse: browse_listings() with type/rarity/archetype filters
+- [x] NFT detail page: get_nft_detail() with listing history and marketplace status
+- [x] Frontend MarketplacePage: browse with filters, buy button, price display
+- [x] Frontend InventoryPage: "Sell on Marketplace" button, loot chests tab
+- [x] API client: 7 new marketplace/transfer endpoint functions
+- [x] Match response includes loot_chest_id and loot_chest_items
+- [x] 12 test groups all passing, all prior phases green
+
+**Decisions Made:**
+- Loot chest = 3 items (keeps rewards meaningful but not overwhelming)
+- 70/30 gear-to-skill ratio in chests (gear is more generally useful)
+- Marketplace uses simulated SOL (same wallet system as Phase 8 wagers)
+- Marketplace purchase credits seller's wallet directly (platform fee on wagers only, not marketplace — can add later)
+- Cannot list an NFT that's already actively listed (prevents confusion)
+- Cannot buy your own listing (prevents wash trading)
+- NFT detail includes full listing history for provenance
+- Loot chest items are immediately added to inventory (no "unopened" state in Phase 9 — animation is cosmetic)
+
+**Next Step:**
+- Phase 10: Mobile Optimization (PWA vs React Native decision)
+
+---
+
 ## [2026-03-20] — Phase 8: Wagering System
 
 **Status:** Complete

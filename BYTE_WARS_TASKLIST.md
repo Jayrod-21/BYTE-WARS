@@ -152,18 +152,18 @@
 ---
 
 ## Phase 9 — NFT Marketplace
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Real NFT minting on Solana devnet (Metaplex)
-- [ ] NFT mint on champion win (loot chest mechanic)
-- [ ] Loot chest opening animation
-- [ ] Rarity tier system (common, uncommon, rare, legendary)
-- [ ] Loot table design (drop rates per tier)
-- [ ] NFT transfer between wallets
-- [ ] Marketplace listing (list NFT for sale)
-- [ ] Marketplace purchase flow (SOL payment)
-- [ ] NFT detail page (stats, history, rarity)
-- [ ] Marketplace browse + filter screen
+- [x] Real NFT minting on Solana devnet (Metaplex)
+- [x] NFT mint on champion win (loot chest mechanic)
+- [x] Loot chest opening animation
+- [x] Rarity tier system (common, uncommon, rare, legendary)
+- [x] Loot table design (drop rates per tier)
+- [x] NFT transfer between wallets
+- [x] Marketplace listing (list NFT for sale)
+- [x] Marketplace purchase flow (SOL payment)
+- [x] NFT detail page (stats, history, rarity)
+- [x] Marketplace browse + filter screen
 
 ---
 

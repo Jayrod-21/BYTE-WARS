@@ -12,6 +12,8 @@ Phase 7: In-memory storage with stub NFTs.
 Phase 9: On-chain NFT verification via Metaplex.
 """
 
+from datetime import datetime, timezone
+
 from models.nft import (
     NFTItem,
     NFTType,
@@ -19,7 +21,12 @@ from models.nft import (
     SKILL_CATALOG,
     generate_stub_nft,
     generate_starter_inventory,
+    generate_loot_chest,
     RARITY_MULTIPLIERS,
+    LOOT_DROP_RATES,
+    MarketplaceListing,
+    ListingStatus,
+    LootChestRecord,
 )
 from engine.archetypes import MAX_GEAR_SLOTS, MAX_SKILL_SLOTS
 
@@ -29,6 +36,12 @@ _inventory_store: dict[str, list[NFTItem]] = {}
 
 # NFT lookup by ID for fast access
 _nft_lookup: dict[str, NFTItem] = {}
+
+# Marketplace listings
+_listings_store: dict[str, MarketplaceListing] = {}
+
+# Loot chest records
+_chest_store: dict[str, LootChestRecord] = {}
 
 
 class NFTService:
@@ -264,7 +277,302 @@ class NFTService:
         return actions
 
 
+    # =============================================
+    # Phase 9: Loot Chests
+    # =============================================
+
+    def award_loot_chest(self, match_id: str, winner_id: str) -> LootChestRecord:
+        """
+        Award a loot chest to a match winner.
+
+        Generates random NFT items based on the loot table
+        and adds them to the winner's inventory.
+
+        Args:
+            match_id: The match that was won.
+            winner_id: The winner's owner ID.
+
+        Returns:
+            LootChestRecord with the items.
+        """
+        items = generate_loot_chest(winner_id)
+
+        # Add to inventory
+        if winner_id not in _inventory_store:
+            _inventory_store[winner_id] = []
+        _inventory_store[winner_id].extend(items)
+        for item in items:
+            _nft_lookup[item.id] = item
+
+        chest = LootChestRecord(
+            match_id=match_id,
+            owner_id=winner_id,
+            items=[item.to_dict() for item in items],
+            opened=True,
+        )
+        _chest_store[chest.id] = chest
+        return chest
+
+    def get_chest(self, chest_id: str) -> LootChestRecord | None:
+        """Get a loot chest record by ID."""
+        return _chest_store.get(chest_id)
+
+    def get_user_chests(self, owner_id: str) -> list[dict]:
+        """Get all loot chests for a user."""
+        chests = [
+            {
+                "id": c.id,
+                "match_id": c.match_id,
+                "items": c.items,
+                "opened": c.opened,
+                "created_at": c.created_at,
+            }
+            for c in _chest_store.values()
+            if c.owner_id == owner_id
+        ]
+        chests.sort(key=lambda c: c["created_at"], reverse=True)
+        return chests
+
+    # =============================================
+    # Phase 9: NFT Transfer
+    # =============================================
+
+    def transfer_nft(
+        self,
+        nft_id: str,
+        from_owner: str,
+        to_owner: str,
+    ) -> NFTItem:
+        """
+        Transfer an NFT between owners.
+
+        Args:
+            nft_id: The NFT to transfer.
+            from_owner: Current owner.
+            to_owner: New owner.
+
+        Returns:
+            Updated NFTItem.
+
+        Raises:
+            ValueError: If NFT not found or ownership mismatch.
+        """
+        nft = _nft_lookup.get(nft_id)
+        if nft is None:
+            raise ValueError(f"NFT '{nft_id}' not found.")
+        if nft.owner_wallet != from_owner:
+            raise ValueError("You don't own this NFT.")
+
+        # Remove from sender's inventory
+        if from_owner in _inventory_store:
+            _inventory_store[from_owner] = [
+                item for item in _inventory_store[from_owner]
+                if item.id != nft_id
+            ]
+
+        # Add to receiver's inventory
+        if to_owner not in _inventory_store:
+            _inventory_store[to_owner] = []
+        nft.owner_wallet = to_owner
+        _inventory_store[to_owner].append(nft)
+
+        return nft
+
+    # =============================================
+    # Phase 9: Marketplace
+    # =============================================
+
+    def create_listing(
+        self,
+        nft_id: str,
+        seller_id: str,
+        price_sol: float,
+    ) -> MarketplaceListing:
+        """
+        List an NFT for sale on the marketplace.
+
+        Args:
+            nft_id: The NFT to list.
+            seller_id: The seller's owner ID.
+            price_sol: Asking price in SOL.
+
+        Returns:
+            MarketplaceListing.
+
+        Raises:
+            ValueError: If validation fails.
+        """
+        nft = _nft_lookup.get(nft_id)
+        if nft is None:
+            raise ValueError(f"NFT '{nft_id}' not found.")
+        if nft.owner_wallet != seller_id:
+            raise ValueError("You don't own this NFT.")
+        if price_sol <= 0:
+            raise ValueError("Price must be greater than 0.")
+
+        # Check not already listed
+        for listing in _listings_store.values():
+            if listing.nft_id == nft_id and listing.status == ListingStatus.ACTIVE:
+                raise ValueError("This NFT is already listed for sale.")
+
+        listing = MarketplaceListing(
+            nft_id=nft_id,
+            seller_id=seller_id,
+            price_sol=price_sol,
+            nft_snapshot=nft.to_dict(),
+        )
+        _listings_store[listing.id] = listing
+        return listing
+
+    def cancel_listing(self, listing_id: str, seller_id: str) -> MarketplaceListing:
+        """Cancel an active listing."""
+        listing = _listings_store.get(listing_id)
+        if listing is None:
+            raise ValueError(f"Listing '{listing_id}' not found.")
+        if listing.seller_id != seller_id:
+            raise ValueError("You can only cancel your own listings.")
+        if listing.status != ListingStatus.ACTIVE:
+            raise ValueError(f"Listing is '{listing.status}', not active.")
+
+        listing.status = ListingStatus.CANCELLED
+        return listing
+
+    def purchase_listing(
+        self,
+        listing_id: str,
+        buyer_id: str,
+        buyer_wallet: str,
+    ) -> tuple[MarketplaceListing, NFTItem]:
+        """
+        Purchase an NFT from the marketplace.
+
+        Transfers the NFT to the buyer and marks listing as sold.
+        SOL payment is simulated (real Solana tx in Phase 11).
+
+        Args:
+            listing_id: The listing to purchase.
+            buyer_id: The buyer's owner ID.
+            buyer_wallet: The buyer's wallet address (for balance check).
+
+        Returns:
+            Tuple of (updated listing, transferred NFT).
+
+        Raises:
+            ValueError: If validation fails.
+        """
+        listing = _listings_store.get(listing_id)
+        if listing is None:
+            raise ValueError(f"Listing '{listing_id}' not found.")
+        if listing.status != ListingStatus.ACTIVE:
+            raise ValueError(f"Listing is '{listing.status}', not active.")
+        if listing.seller_id == buyer_id:
+            raise ValueError("Cannot buy your own listing.")
+
+        # Check buyer wallet balance (using wager wallet system)
+        from services.wager_service import _wallets_store
+        wallet = _wallets_store.get(buyer_wallet)
+        if wallet and wallet.available_sol < listing.price_sol:
+            raise ValueError(
+                f"Insufficient balance. Need {listing.price_sol} SOL, "
+                f"have {wallet.available_sol} SOL."
+            )
+
+        # Transfer NFT
+        nft = self.transfer_nft(listing.nft_id, listing.seller_id, buyer_id)
+
+        # Simulate SOL payment
+        if wallet:
+            wallet.balance_sol -= listing.price_sol
+        # Credit seller
+        seller_wallet_key = f"devnet_{listing.seller_id[:8]}" if len(listing.seller_id) > 8 else listing.seller_id
+        from services.wager_service import WagerService
+        ws = WagerService()
+        seller_wallet = ws.get_or_create_wallet(seller_wallet_key)
+        seller_wallet.balance_sol += listing.price_sol
+
+        # Update listing
+        listing.status = ListingStatus.SOLD
+        listing.buyer_id = buyer_id
+        listing.sold_at = datetime.now(timezone.utc).isoformat()
+
+        return listing, nft
+
+    def get_listing(self, listing_id: str) -> MarketplaceListing | None:
+        """Get a marketplace listing by ID."""
+        return _listings_store.get(listing_id)
+
+    def browse_listings(
+        self,
+        nft_type: str | None = None,
+        rarity: str | None = None,
+        archetype: str | None = None,
+        status: str = "active",
+    ) -> list[dict]:
+        """
+        Browse marketplace listings with optional filters.
+
+        Args:
+            nft_type: Filter by "gear" or "skill".
+            rarity: Filter by rarity tier.
+            archetype: Filter by archetype affinity.
+            status: Filter by listing status (default "active").
+
+        Returns:
+            List of listing dicts sorted by newest first.
+        """
+        results = []
+        for listing in _listings_store.values():
+            if listing.status != status:
+                continue
+
+            snap = listing.nft_snapshot
+            if nft_type and snap.get("nft_type") != nft_type:
+                continue
+            if rarity and snap.get("rarity") != rarity:
+                continue
+            if archetype and snap.get("archetype_affinity") != archetype:
+                continue
+
+            results.append(listing.to_dict())
+
+        results.sort(key=lambda l: l["created_at"], reverse=True)
+        return results
+
+    def get_nft_detail(self, nft_id: str) -> dict | None:
+        """
+        Get full NFT detail including ownership history.
+
+        Returns enriched NFT data with marketplace status.
+        """
+        nft = _nft_lookup.get(nft_id)
+        if nft is None:
+            return None
+
+        detail = nft.to_dict()
+
+        # Find active listing
+        active_listing = None
+        listing_history = []
+        for listing in _listings_store.values():
+            if listing.nft_id == nft_id:
+                if listing.status == ListingStatus.ACTIVE:
+                    active_listing = listing.to_dict()
+                listing_history.append({
+                    "listing_id": listing.id,
+                    "price_sol": listing.price_sol,
+                    "status": listing.status,
+                    "created_at": listing.created_at,
+                    "sold_at": listing.sold_at,
+                })
+
+        detail["active_listing"] = active_listing
+        detail["listing_history"] = listing_history
+        return detail
+
+
 def clear_store():
     """Clear NFT stores. Used by tests."""
     _inventory_store.clear()
     _nft_lookup.clear()
+    _listings_store.clear()
+    _chest_store.clear()

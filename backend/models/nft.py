@@ -16,6 +16,7 @@ Phase 7: Uses stub/mock NFTs for testing. Phase 9 will mint real NFTs on Solana.
 import uuid
 import random
 from dataclasses import dataclass, field, asdict
+from datetime import datetime, timezone
 from enum import Enum
 
 
@@ -422,3 +423,114 @@ def generate_starter_inventory(owner_wallet: str | None = None) -> list[NFTItem]
         items.append(generate_stub_nft(s, "skill", owner_wallet))
 
     return items
+
+
+# =============================================
+# LOOT TABLE — Drop rates per rarity tier
+# =============================================
+
+# Drop rates (must sum to 1.0)
+LOOT_DROP_RATES = {
+    "common": 0.50,
+    "uncommon": 0.30,
+    "rare": 0.15,
+    "legendary": 0.05,
+}
+
+# Number of items per loot chest
+LOOT_CHEST_SIZE = 3  # 3 items per chest
+
+
+def roll_loot_rarity() -> str:
+    """Roll a random rarity based on drop rates."""
+    roll = random.random()
+    cumulative = 0.0
+    for rarity, rate in LOOT_DROP_RATES.items():
+        cumulative += rate
+        if roll < cumulative:
+            return rarity
+    return "common"
+
+
+def generate_loot_chest(owner_id: str) -> list[NFTItem]:
+    """
+    Generate a loot chest with random NFT items.
+
+    Each chest contains LOOT_CHEST_SIZE items with rarities
+    rolled from the loot table. Mix of gear and skills.
+
+    Args:
+        owner_id: Owner's ID/wallet.
+
+    Returns:
+        List of NFTItem instances.
+    """
+    items = []
+    for _ in range(LOOT_CHEST_SIZE):
+        rarity = roll_loot_rarity()
+        # 70% chance gear, 30% chance skill
+        if random.random() < 0.7:
+            candidates = [g for g in GEAR_CATALOG if g["rarity"] == rarity]
+            if not candidates:
+                candidates = GEAR_CATALOG
+            entry = random.choice(candidates)
+            items.append(generate_stub_nft(entry, "gear", owner_id))
+        else:
+            candidates = [s for s in SKILL_CATALOG if s["rarity"] == rarity]
+            if not candidates:
+                candidates = SKILL_CATALOG
+            entry = random.choice(candidates)
+            items.append(generate_stub_nft(entry, "skill", owner_id))
+    return items
+
+
+# =============================================
+# MARKETPLACE LISTING — NFT for sale
+# =============================================
+
+class ListingStatus(str, Enum):
+    ACTIVE = "active"
+    SOLD = "sold"
+    CANCELLED = "cancelled"
+
+
+@dataclass
+class MarketplaceListing:
+    """An NFT listed for sale on the marketplace."""
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    nft_id: str = ""
+    seller_id: str = ""
+    price_sol: float = 0.0
+    status: str = ListingStatus.ACTIVE
+    buyer_id: str = ""
+    nft_snapshot: dict = field(default_factory=dict)  # NFT data at time of listing
+    created_at: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+    sold_at: str = ""
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "nft_id": self.nft_id,
+            "seller_id": self.seller_id,
+            "price_sol": self.price_sol,
+            "status": self.status,
+            "buyer_id": self.buyer_id,
+            "nft_snapshot": self.nft_snapshot,
+            "created_at": self.created_at,
+            "sold_at": self.sold_at,
+        }
+
+
+@dataclass
+class LootChestRecord:
+    """Record of a loot chest drop."""
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    match_id: str = ""
+    owner_id: str = ""
+    items: list = field(default_factory=list)  # list of NFTItem dicts
+    opened: bool = False
+    created_at: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )

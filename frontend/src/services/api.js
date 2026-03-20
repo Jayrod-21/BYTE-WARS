@@ -172,4 +172,50 @@ export async function airdropSol(walletAddress, amountSol = 10) {
   });
 }
 
+// --- Marketplace ---
+export async function browseMarketplace(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.nft_type) params.set('nft_type', filters.nft_type);
+  if (filters.rarity) params.set('rarity', filters.rarity);
+  if (filters.archetype) params.set('archetype', filters.archetype);
+  const query = params.toString() ? `?${params}` : '';
+  return request(`/nft/marketplace/browse${query}`);
+}
+
+export async function createListing(nftId, sellerId, priceSol) {
+  return request('/nft/marketplace/list', {
+    method: 'POST',
+    body: JSON.stringify({ nft_id: nftId, seller_id: sellerId, price_sol: priceSol }),
+  });
+}
+
+export async function cancelListing(listingId, sellerId) {
+  return request(`/nft/marketplace/${listingId}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({ seller_id: sellerId }),
+  });
+}
+
+export async function buyListing(listingId, buyerId, buyerWallet) {
+  return request(`/nft/marketplace/${listingId}/buy`, {
+    method: 'POST',
+    body: JSON.stringify({ buyer_id: buyerId, buyer_wallet: buyerWallet }),
+  });
+}
+
+export async function getNFTDetail(nftId) {
+  return request(`/nft/${nftId}/detail`);
+}
+
+export async function getUserChests(ownerId) {
+  return request(`/nft/chests/${ownerId}`);
+}
+
+export async function transferNFT(nftId, fromOwner, toOwner) {
+  return request('/nft/transfer', {
+    method: 'POST',
+    body: JSON.stringify({ nft_id: nftId, from_owner: fromOwner, to_owner: toOwner }),
+  });
+}
+
 export { getToken, getUser, setToken, setUser };
