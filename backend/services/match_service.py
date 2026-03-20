@@ -27,6 +27,8 @@ from mcp_tools.game_state import build_game_state
 from mcp_tools.bot_response import BotResponseParser
 from engine.turn_manager import TurnManager
 from services.champion_service import decrypt_api_key
+from services.nft_service import NFTService
+from services.wager_service import WagerService as _WagerService
 
 
 # Match states
@@ -55,6 +57,8 @@ class MatchService:
 
     def __init__(self):
         self.registry = ToolRegistry()
+        self.nft_service = NFTService()
+        self.wager_service = _WagerService()
 
     def create_match(
         self,
@@ -127,6 +131,9 @@ class MatchService:
         match_data["status"] = MATCH_ACTIVE
         match_data["started_at"] = datetime.now(timezone.utc).isoformat()
 
+        # Lock escrow — no more wagers accepted
+        self.wager_service.lock_escrow(match_id)
+
         # Execute battle (async but awaited — non-blocking for other requests)
         await self._execute_battle(match_id)
 
@@ -182,11 +189,29 @@ class MatchService:
             match_data["total_turns"] = history.total_turns
             match_data["resolved_at"] = datetime.now(timezone.utc).isoformat()
 
+            # Resolve wagers
+            if history.status == "complete" and history.winner_id:
+                self.wager_service.distribute_payouts(match_id, history.winner_id)
+                # Award loot chest to winner
+                winner_champ = next(
+                    (c for c in champion_data_list if str(c["id"]) == history.winner_id),
+                    None,
+                )
+                winner_owner = winner_champ.get("owner_user_id", history.winner_id) if winner_champ else history.winner_id
+                chest = self.nft_service.award_loot_chest(match_id, winner_owner)
+                match_data["loot_chest_id"] = chest.id
+                match_data["loot_chest_items"] = chest.items
+            else:
+                # Timed out or no winner — refund all
+                self.wager_service.refund_all(match_id)
+
         except Exception as e:
             # If battle crashes, mark as timed_out with error info
             match_data["status"] = MATCH_TIMED_OUT
             match_data["resolved_at"] = datetime.now(timezone.utc).isoformat()
             match_data["error"] = str(e)
+            # Refund all wagers on crash
+            self.wager_service.refund_all(match_id)
 
         # Clean up task reference
         _running_tasks.pop(match_id, None)
@@ -210,14 +235,30 @@ class MatchService:
                 f"Battle requires 2-4 champions, got {len(champions_data)}"
             )
 
-        registry = self.registry
+        # Create a fresh registry for this battle (so NFT skills don't leak between matches)
+        registry = ToolRegistry()
         bridge = ToolBridge(registry)
         turn_manager = TurnManager()
         parser = BotResponseParser(registry)
         mock_bot = MockBot()
 
+        # Apply NFT gear bonuses and register NFT skills
+        enhanced_data = []
+        for champ in champions_data:
+            champ_copy = dict(champ)
+            # Apply gear stat bonuses (base gear + NFT gear)
+            champ_copy["stats"] = self.nft_service.apply_gear_bonuses(champ_copy)
+            # Register NFT skill actions as MCP tools
+            skill_actions = self.nft_service.get_skill_actions(champ_copy)
+            for action in skill_actions:
+                try:
+                    registry.register_tool(action)
+                except (ValueError, KeyError):
+                    pass  # Skip invalid or duplicate tools
+            enhanced_data.append(champ_copy)
+
         match_id = str(uuid.uuid4())
-        fighters = [BattleChampion.from_dict(c) for c in champions_data]
+        fighters = [BattleChampion.from_dict(c) for c in enhanced_data]
         all_tools = registry.get_all_tools()
         tool_schemas = registry.get_tool_schemas()
 
@@ -430,6 +471,8 @@ class MatchService:
             "created_at": match_data.get("created_at"),
             "started_at": match_data.get("started_at"),
             "resolved_at": match_data.get("resolved_at"),
+            "loot_chest_id": match_data.get("loot_chest_id"),
+            "loot_chest_items": match_data.get("loot_chest_items", []),
         }
 
 

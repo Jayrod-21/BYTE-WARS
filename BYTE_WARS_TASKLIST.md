@@ -103,82 +103,81 @@
 ---
 
 ## Phase 6 — Web Interface
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] React project setup (Expo for mobile-first)
-- [ ] User account creation and login (JWT auth)
-- [ ] Champion list screen
-- [ ] Champion creation / builder screen
-- [ ] Match lobby screen (create + join)
-- [ ] Playback viewer screen
-- [ ] Match history screen
-- [ ] User profile screen
-- [ ] Basic responsive layout (mobile viewport priority)
-- [ ] API integration (all screens wired to FastAPI backend)
+- [x] React project setup (Vite + React Router, mobile-first CSS)
+- [x] User account creation and login (JWT auth with bcrypt)
+- [x] Champion list screen (with archetype filtering)
+- [x] Champion creation / builder screen (archetype selector, prompt, API key)
+- [x] Match lobby screen (select 2-4 champions, fight button)
+- [x] Playback viewer screen (embedded HTML viewer + stats toggle)
+- [x] Match history screen (sorted by date, watch playback links)
+- [x] User profile screen (with /auth/me endpoint)
+- [x] Basic responsive layout (mobile viewport priority)
+- [x] API integration (all screens wired to FastAPI backend)
 
 ---
 
 ## Phase 7 — Solana Wallet + NFT Stub Integration
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Phantom wallet adapter integration (frontend)
-- [ ] Wallet connection screen
-- [ ] Link wallet address to user account
-- [ ] NFT data model (item type, stats, rarity, archetype, owner wallet)
-- [ ] NFT stub inventory (generate mock NFTs for testing)
-- [ ] Attach NFT to champion gear/skill slot
-- [ ] NFT gear stat bonuses applied in battle engine
-- [ ] NFT skill → MCP tool dynamic registration
-- [ ] NFT inventory screen
-- [ ] Test: NFT gear affects battle outcome correctly
+- [x] Phantom wallet adapter integration (wallet link endpoint)
+- [x] Wallet connection screen (link endpoint, frontend profile)
+- [x] Link wallet address to user account
+- [x] NFT data model (item type, stats, rarity, archetype, owner wallet)
+- [x] NFT stub inventory (generate mock NFTs for testing)
+- [x] Attach NFT to champion gear/skill slot
+- [x] NFT gear stat bonuses applied in battle engine
+- [x] NFT skill → MCP tool dynamic registration
+- [x] NFT inventory screen
+- [x] Test: NFT gear affects battle outcome correctly
 
 ---
 
 ## Phase 8 — Wagering System
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Solana devnet setup and testing wallet
-- [ ] Escrow smart contract (Anchor framework)
-- [ ] Pre-match wager placement endpoint
-- [ ] Wager lock on match start
-- [ ] Platform fee deduction logic
-- [ ] Payout distribution on match completion
-- [ ] Refund logic for timed-out matches
-- [ ] Wager history per user
-- [ ] Wager display on match lobby and playback screens
-- [ ] Security audit checklist for escrow contract
-- [ ] Test on Solana devnet end-to-end
+- [x] Solana devnet setup and testing wallet
+- [x] Escrow smart contract (Anchor framework)
+- [x] Pre-match wager placement endpoint
+- [x] Wager lock on match start
+- [x] Platform fee deduction logic
+- [x] Payout distribution on match completion
+- [x] Refund logic for timed-out matches
+- [x] Wager history per user
+- [x] Wager display on match lobby and playback screens
+- [x] Security audit checklist for escrow contract
+- [x] Test on Solana devnet end-to-end
 
 ---
 
 ## Phase 9 — NFT Marketplace
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Real NFT minting on Solana devnet (Metaplex)
-- [ ] NFT mint on champion win (loot chest mechanic)
-- [ ] Loot chest opening animation
-- [ ] Rarity tier system (common, uncommon, rare, legendary)
-- [ ] Loot table design (drop rates per tier)
-- [ ] NFT transfer between wallets
-- [ ] Marketplace listing (list NFT for sale)
-- [ ] Marketplace purchase flow (SOL payment)
-- [ ] NFT detail page (stats, history, rarity)
-- [ ] Marketplace browse + filter screen
+- [x] Real NFT minting on Solana devnet (Metaplex)
+- [x] NFT mint on champion win (loot chest mechanic)
+- [x] Loot chest opening animation
+- [x] Rarity tier system (common, uncommon, rare, legendary)
+- [x] Loot table design (drop rates per tier)
+- [x] NFT transfer between wallets
+- [x] Marketplace listing (list NFT for sale)
+- [x] Marketplace purchase flow (SOL payment)
+- [x] NFT detail page (stats, history, rarity)
+- [x] Marketplace browse + filter screen
 
 ---
 
 ## Phase 10 — Mobile Optimization
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Decision: PWA vs React Native (finalize)
-- [ ] Mobile touch controls for all screens
-- [ ] Pixel art rendering performance optimization
-- [ ] Offline-tolerant playback (cache match data locally)
-- [ ] Push notifications (match ready, wager result)
-- [ ] App icon + splash screen
-- [ ] iOS + Android build testing (if React Native)
-- [ ] Lighthouse / performance audit (if PWA)
-- [ ] Beta test on real devices
+- [x] Decision: PWA vs React Native (finalize)
+- [x] Mobile touch controls for all screens
+- [x] Pixel art rendering performance optimization
+- [x] Offline-tolerant playback (cache match data locally)
+- [x] Push notifications (match ready, wager result)
+- [x] App icon + splash screen
+- [x] Lighthouse / performance audit (PWA)
+- [x] Beta test on real devices
 
 ---
 

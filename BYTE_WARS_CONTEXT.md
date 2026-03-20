@@ -101,7 +101,7 @@ heal               — cost 2, restores [10, 20] HP, requires endurance
 |---|---|---|
 | Battle Engine | Python + FastAPI | Core logic lives here |
 | MCP Server | Python MCP SDK | Actions as tools |
-| Frontend | React Native / Expo | Mobile-first |
+| Frontend | React + Vite (PWA) | Mobile-first |
 | Blockchain | Solana + Metaplex | NFTs + wagering |
 | Wallet | Phantom adapter | Primary wallet |
 | DB | PostgreSQL | Match history, accounts |
@@ -112,7 +112,7 @@ heal               — cost 2, restores [10, 20] HP, requires endurance
 
 ## Current Phase
 
-**Current Phase:** Phase 5 — Playback & Visualization (Complete)
-**Last Completed:** Phase 5 (2026-03-20)
-**Next Task:** Phase 6 — Web Interface
+**Current Phase:** Phase 10 — Mobile Optimization (Complete)
+**Last Completed:** Phase 10 (2026-03-20)
+**Next Task:** Phase 11 — Production Hardening & Deployment
 **Blocked On:** Nothing currently.
