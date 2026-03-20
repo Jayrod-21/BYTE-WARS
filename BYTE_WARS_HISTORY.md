@@ -74,4 +74,120 @@
 
 ---
 
+## [2026-03-19] — Phase 2: MCP Tool Action System
+
+**Status:** Complete
+**Session Model:** claude-opus-4-6
+
+**Work Done:**
+- [x] FastMCP server with all 5 base actions registered as callable MCP tools
+- [x] ToolRegistry: central registry with dynamic tool registration/unregistration
+- [x] ToolBridge: connects MCP tool calls to DamageResolver for resolution
+- [x] GameState: builds complete game state for bots each turn (own stats, opponents, tools, history)
+- [x] GameState.to_prompt(): converts game state to human-readable prompt for AI models
+- [x] BotResponseParser: validates bot responses, catches errors, auto-corrects targets, provides fallback
+- [x] Dynamic NFT skill registration and resolution verified in battle
+- [x] Battle engine refactored to use MCP pipeline (ToolBridge + BotResponseParser)
+- [x] 7 integration tests all passing (registry, bridge, game state, parser, server, full battle, dynamic tools)
+- [x] Phase 1 tests still pass (backward compatible)
+
+**Decisions Made:**
+- Renamed local `mcp/` package to `mcp_tools/` to avoid shadowing the installed MCP SDK
+- BotResponseParser accepts both JSON strings and Python lists (flexible for AI responses)
+- Invalid bot responses fall back to basic_strike on a random opponent (match never crashes)
+- GameState includes last 3 turns of history for tactical context
+- Tool schemas are simplified versions of full action defs (only fields bots need)
+
+**Open Issues / Blockers:**
+- None
+
+**Next Step:**
+- Phase 3: Champion Builder — CRUD API for champions with system prompt and gear management
+
+---
+
+## [2026-03-20] — Phase 5: Playback & Visualization System
+
+**Status:** Complete
+**Session Model:** claude-opus-4-6
+
+**Work Done:**
+- [x] PlaybackEvent system: 10 event types with timing metadata
+- [x] BattleHistory → PlaybackData converter with match summary stats
+- [x] Pixel art SVG sprite system: 16x16 pixel grids for all 5 archetypes
+- [x] Self-contained HTML playback viewer with CSS animations
+- [x] Arena renderer with HP bars, damage popups, action log
+- [x] Speed controls (0.5x, 1x, 2x, skip), pause/play, restart
+- [x] Match summary overlay with per-champion stats
+- [x] Playback + Sprite API endpoints with shareable links
+- [x] 10 test groups all passing, all prior phases green
+
+**Decisions Made:**
+- SVG sprites (inline pixel grids) — no raster assets needed, perfect scaling
+- Self-contained HTML viewer — no external dependencies, works standalone
+- Events timestamped in ms with duration for smooth animation scheduling
+
+**Next Step:**
+- Phase 6: Web Interface
+
+---
+
+## [2026-03-19] — Phase 4: Match Orchestration
+
+**Status:** Complete
+**Session Model:** claude-opus-4-6
+
+**Work Done:**
+- [x] AIBot class: real AI API integration for Claude, GPT, Gemini (OpenAI-compatible)
+- [x] Match service: lobby creation, state machine (pending → active → complete | timed_out)
+- [x] Match API routes: POST /matches, POST /matches/{id}/start, GET /matches/{id}, GET /matches
+- [x] Per-champion bot selection: AIBot for champions with API keys, MockBot fallback
+- [x] Bot response timeout: 12s async timeout, falls back to random actions
+- [x] Multi-bot free-for-all: tested 1v1, 1v1v1, and 1v1v1v1 matches
+- [x] Winner determination and full turn history storage
+- [x] Match data never leaks encrypted API keys
+- [x] 11 test groups all passing, all prior phases still green
+
+**Decisions Made:**
+- Battle execution is inline-awaited (not background task) for reliability
+- AI API calls use httpx async client with 10s timeout per call
+- Anthropic uses Messages API format; all others use OpenAI chat completions
+- JSON extraction from AI responses handles markdown code blocks and raw text
+- UUID type mismatch fixed between champion service (UUID) and battle engine (str)
+
+**Next Step:**
+- Phase 5: Playback & Visualization System
+
+---
+
+## [2026-03-19] — Phase 3: Champion Builder
+
+**Status:** Complete
+**Session Model:** claude-opus-4-6
+
+**Work Done:**
+- [x] Archetype system: 5 archetypes (tank, assassin, mage, ranger, support) with default stats and base gear
+- [x] Champion creation API (POST /api/champions) with archetype-based defaults
+- [x] Champion retrieval (GET /api/champions/{id}) and listing (GET /api/champions)
+- [x] Champion update (PATCH /api/champions/{id}) with rule enforcement
+- [x] Pydantic schemas with validation (slot limits, archetype check, name length)
+- [x] API key encryption at rest using Fernet symmetric encryption
+- [x] API keys never returned in responses (has_api_key boolean instead)
+- [x] Base gear immutability enforced (core rule #3)
+- [x] Cross-archetype gear selection allowed
+- [x] AI model selection stored per champion
+- [x] 12 test groups all passing
+
+**Decisions Made:**
+- In-memory champion storage for Phase 3 (PostgreSQL queries added in Phase 4)
+- Fernet encryption for API keys with env-based key (ENCRYPTION_KEY)
+- Routes mounted at /api/champions prefix
+- Archetype cannot be changed after creation
+- Stats determined by archetype (no direct stat modification)
+
+**Next Step:**
+- Phase 4: Match Orchestration — lobby system, real AI model integration
+
+---
+
 <!-- Add new entries above this line as phases complete -->

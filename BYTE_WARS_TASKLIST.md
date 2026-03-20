@@ -38,67 +38,67 @@
 ---
 
 ## Phase 2 — MCP Tool Action System
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Set up MCP server (Python MCP SDK)
-- [ ] Register base 5 actions as MCP tools
-- [ ] Tool schema: action_point_cost, damage_range, stat_requirement, target type
-- [ ] MCP tool call → Battle Engine resolver bridge
-- [ ] Dynamic tool registration (for future NFT skills)
-- [ ] Bot receives game state + available tools each turn
-- [ ] Bot response parsed and validated before execution
-- [ ] Test: real tool calls resolve correctly in a full match
+- [x] Set up MCP server (Python MCP SDK)
+- [x] Register base 5 actions as MCP tools
+- [x] Tool schema: action_point_cost, damage_range, stat_requirement, target type
+- [x] MCP tool call → Battle Engine resolver bridge
+- [x] Dynamic tool registration (for future NFT skills)
+- [x] Bot receives game state + available tools each turn
+- [x] Bot response parsed and validated before execution
+- [x] Test: real tool calls resolve correctly in a full match
 
 ---
 
 ## Phase 3 — Champion Builder
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Champion creation API endpoint (POST /champions)
-- [ ] System prompt input and storage (encrypted at rest)
-- [ ] Archetype selection (tank, assassin, mage, ranger, support)
-- [ ] Cross-archetype gear/skill selection logic
-- [ ] Gear slot and skill slot limits enforced
-- [ ] Base gear assignment on champion creation (permanent)
-- [ ] API key input and encrypted storage per champion
-- [ ] AI model selection (model string stored per champion)
-- [ ] Champion profile retrieval (GET /champions/{id})
-- [ ] Champion update endpoint (PATCH /champions/{id}) — no base gear modification
-- [ ] Validation: cannot exceed slot limits, cannot remove base gear
+- [x] Champion creation API endpoint (POST /champions)
+- [x] System prompt input and storage (encrypted at rest)
+- [x] Archetype selection (tank, assassin, mage, ranger, support)
+- [x] Cross-archetype gear/skill selection logic
+- [x] Gear slot and skill slot limits enforced
+- [x] Base gear assignment on champion creation (permanent)
+- [x] API key input and encrypted storage per champion
+- [x] AI model selection (model string stored per champion)
+- [x] Champion profile retrieval (GET /champions/{id})
+- [x] Champion update endpoint (PATCH /champions/{id}) — no base gear modification
+- [x] Validation: cannot exceed slot limits, cannot remove base gear
 
 ---
 
 ## Phase 4 — Match Orchestration
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Match creation endpoint (POST /matches)
-- [ ] Lobby system — accept 2-4 champions
-- [ ] Match status state machine (pending → active → complete | timed_out)
-- [ ] Real AI model integration — replace mock bot with actual API calls
-- [ ] Game state object passed to each bot each turn
-- [ ] Bot response timeout handling (if AI takes too long, random action used)
-- [ ] Multi-bot free-for-all resolution (1v1v1v1 target selection logic)
-- [ ] Time limit enforcement (wall clock + turn limit)
-- [ ] Winner determination logic
-- [ ] Match result storage
-- [ ] Async match execution (non-blocking)
-- [ ] Match history retrieval (GET /matches/{id})
+- [x] Match creation endpoint (POST /matches)
+- [x] Lobby system — accept 2-4 champions
+- [x] Match status state machine (pending → active → complete | timed_out)
+- [x] Real AI model integration — replace mock bot with actual API calls
+- [x] Game state object passed to each bot each turn
+- [x] Bot response timeout handling (if AI takes too long, random action used)
+- [x] Multi-bot free-for-all resolution (1v1v1v1 target selection logic)
+- [x] Time limit enforcement (wall clock + turn limit)
+- [x] Winner determination logic
+- [x] Match result storage
+- [x] Async match execution (non-blocking)
+- [x] Match history retrieval (GET /matches/{id})
 
 ---
 
 ## Phase 5 — Playback & Visualization System
-**Status:** 🔲 Not Started
+**Status:** ✅ Complete
 
-- [ ] Battle History → Playback Event format converter
-- [ ] Playback event types: move, attack, defend, skill_use, damage_taken, heal, death, match_end
-- [ ] Pixel art sprite system (champion avatars by archetype)
-- [ ] Arena environment assets (base arena, environmental hazards placeholder)
-- [ ] Stat bar overlays (HP bars, action points display)
-- [ ] Turn-by-turn animation sequencer
-- [ ] Playback speed controls (0.5x, 1x, 2x, fast-forward)
-- [ ] Match summary screen (winner, stats, damage dealt/taken)
-- [ ] Playback shareable link generation
-- [ ] Test: full match renders without errors, all actions visualized
+- [x] Battle History → Playback Event format converter
+- [x] Playback event types: match_start, turn_start, attack, defend, skill_use, damage_taken, heal, death, turn_end, match_end
+- [x] Pixel art sprite system (SVG-based champion avatars by archetype)
+- [x] Arena environment assets (CSS gradient arena with floor)
+- [x] Stat bar overlays (HP bars with color transitions)
+- [x] Turn-by-turn animation sequencer
+- [x] Playback speed controls (0.5x, 1x, 2x, skip-to-end)
+- [x] Match summary screen (winner, stats, damage dealt/taken/healed/kills)
+- [x] Playback shareable link generation
+- [x] Test: full match renders without errors, all actions visualized
 
 ---
 

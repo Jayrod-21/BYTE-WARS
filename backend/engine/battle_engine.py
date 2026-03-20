@@ -3,12 +3,14 @@ engine/battle_engine.py — Core Battle Engine loop for BYTE Wars.
 
 Runs a complete match between 2-4 champions. The engine:
 1. Rolls initiative to determine turn order
-2. Each turn: every living champion picks actions (mock bot = random)
-3. Actions are validated, then resolved via DamageResolver
+2. Each turn: every living champion picks actions (mock bot or MCP tool calls)
+3. Actions are validated via BotResponseParser, then resolved via ToolBridge
 4. Match ends when one champion remains or the turn limit (50) is hit
 5. Returns a BattleHistory with every turn logged for playback
 
-This is the heart of BYTE Wars. All battles resolve fully before visualization.
+Phase 2 update: Now uses ToolBridge for resolution and BotResponseParser for
+validation. GameState is built each turn for bot context. MockBot updated to
+receive game state. Falls back to Phase 1 direct mode if MCP modules unavailable.
 """
 
 import random
@@ -19,6 +21,10 @@ from datetime import datetime, timezone
 from engine.actions import ACTIONS, get_affordable_actions
 from engine.damage_resolver import DamageResolver, ResolutionResult
 from engine.turn_manager import TurnManager, MAX_ACTION_POINTS
+from mcp_tools.tool_registry import ToolRegistry
+from mcp_tools.tool_bridge import ToolBridge
+from mcp_tools.game_state import build_game_state
+from mcp_tools.bot_response import BotResponseParser
 
 
 # Maximum turns before the match is declared timed out
@@ -60,6 +66,8 @@ class TurnEntry:
     champion_name: str
     actions_taken: list[dict] = field(default_factory=list)
     resolutions: list[dict] = field(default_factory=list)
+    game_state_snapshot: dict = field(default_factory=dict)
+    used_fallback: bool = False
 
 
 @dataclass
@@ -88,8 +96,9 @@ class MockBot:
     """
     A mock bot that randomly selects actions each turn.
 
-    Used for Phase 1 testing. In Phase 4, this is replaced by real AI model
-    calls where the bot receives game state and chooses actions via MCP tools.
+    Phase 2 update: Now receives a GameState object for context and uses
+    the BotResponseParser format. Still picks randomly, but validates
+    through the same pipeline as real AI bots will in Phase 4.
     """
 
     def choose_actions(
@@ -97,33 +106,35 @@ class MockBot:
         champion: BattleChampion,
         opponents: list[BattleChampion],
         available_actions: dict,
+        game_state=None,
     ) -> list[dict]:
         """
         Randomly select actions up to the 3 action point budget.
-
-        Strategy: Keep picking random affordable actions until action points
-        are exhausted or no more affordable actions remain.
 
         Args:
             champion: The bot's current battle state.
             opponents: List of living opponents.
             available_actions: Dict of all available actions.
+            game_state: Optional GameState object (used by AI bots in Phase 4).
 
         Returns:
-            List of action dicts with 'name' and 'target_id' keys.
+            List of action dicts with 'action' and 'target_id' keys.
         """
         chosen = []
         remaining_ap = MAX_ACTION_POINTS
 
         while remaining_ap > 0:
             # Get actions we can still afford
-            affordable = get_affordable_actions(remaining_ap)
+            affordable = [
+                a for a in available_actions.values()
+                if a["action_point_cost"] <= remaining_ap
+            ]
             if not affordable:
                 break
 
             # Pick a random action
             action = random.choice(affordable)
-            action_entry = {"name": action["name"]}
+            action_entry = {"action": action["name"]}
 
             # Assign a target if the action targets an enemy
             if action["target"] == "single_enemy":
@@ -145,17 +156,31 @@ class BattleEngine:
     """
     The core battle engine. Runs a complete match between 2-4 champions.
 
+    Phase 2 update: Now uses:
+    - ToolRegistry: Single source of truth for available actions
+    - ToolBridge: Connects MCP tool calls to the DamageResolver
+    - GameState: Built each turn and passed to bots for decision-making
+    - BotResponseParser: Validates bot responses before resolution
+
     Flow:
     1. Initialize battle state from champion data
     2. Roll initiative for turn order
     3. Loop turns until one champion remains or turn limit hit
-    4. Each turn: bot picks actions → validate → resolve → log
+    4. Each turn: build game state → bot picks actions → parse/validate →
+       resolve via ToolBridge → log results
     5. Return complete BattleHistory
     """
 
-    def __init__(self):
+    def __init__(self, tool_registry: ToolRegistry | None = None):
+        """
+        Args:
+            tool_registry: Optional custom ToolRegistry. If not provided,
+                          creates a default one with the 5 base actions.
+        """
+        self.registry = tool_registry or ToolRegistry()
+        self.bridge = ToolBridge(self.registry)
         self.turn_manager = TurnManager()
-        self.damage_resolver = DamageResolver()
+        self.parser = BotResponseParser(self.registry)
         self.mock_bot = MockBot()
 
     def run_battle(self, champions_data: list[dict]) -> BattleHistory:
@@ -181,6 +206,8 @@ class BattleEngine:
         # --- Initialize battle state ---
         match_id = str(uuid.uuid4())
         fighters = [BattleChampion.from_dict(c) for c in champions_data]
+        all_tools = self.registry.get_all_tools()
+        tool_schemas = self.registry.get_tool_schemas()
 
         history = BattleHistory(
             match_id=match_id,
@@ -218,35 +245,43 @@ class BattleEngine:
                 if not opponents:
                     break  # This champion is the last one standing
 
-                # --- Bot chooses actions ---
-                chosen_actions = self.mock_bot.choose_actions(
-                    champion, opponents, ACTIONS
+                # --- Build game state for this bot's turn ---
+                game_state = build_game_state(
+                    turn_number=turn_number,
+                    champion=champion,
+                    opponents=[f for f in fighters if f.id != champion_id],
+                    tool_schemas=tool_schemas,
+                    recent_history=history.turns[-6:],  # Last few entries
+                    total_champions=len(fighters),
                 )
 
-                # --- Validate actions ---
-                is_valid, error = self.turn_manager.validate_actions(
-                    chosen_actions, ACTIONS
+                # --- Bot chooses actions (mock bot for now) ---
+                raw_response = self.mock_bot.choose_actions(
+                    champion, opponents, all_tools, game_state
                 )
-                if not is_valid:
-                    # If invalid (shouldn't happen with mock bot), use a basic strike
-                    living_opponents = [o for o in opponents if o.is_alive]
-                    if living_opponents:
-                        chosen_actions = [{
-                            "name": "basic_strike",
-                            "target_id": living_opponents[0].id
-                        }]
-                    else:
-                        chosen_actions = []
 
-                # --- Resolve each action ---
+                # --- Parse and validate through BotResponseParser ---
+                alive_opponent_ids = [o.id for o in opponents if o.is_alive]
+                parse_result = self.parser.parse(
+                    raw_response, champion_id, alive_opponent_ids
+                )
+
+                # Convert parsed actions to engine format
+                chosen_actions = self.parser.actions_to_engine_format(
+                    parse_result.actions
+                )
+
+                # --- Resolve each action via ToolBridge ---
                 turn_entry = TurnEntry(
                     turn_number=turn_number,
                     champion_id=champion_id,
                     champion_name=champion.name,
+                    used_fallback=parse_result.used_fallback,
                 )
 
                 for action_choice in chosen_actions:
-                    action_def = ACTIONS.get(action_choice["name"])
+                    action_name = action_choice["name"]
+                    action_def = self.registry.get_tool(action_name)
                     if action_def is None:
                         continue
 
@@ -254,69 +289,77 @@ class BattleEngine:
 
                     # Record the action taken
                     turn_entry.actions_taken.append({
-                        "action": action_choice["name"],
+                        "action": action_name,
                         "target_id": target_id,
                         "cost": action_def["action_point_cost"],
                     })
 
-                    # --- Resolve based on action type ---
+                    # --- Resolve via ToolBridge ---
                     if action_def["is_defense"]:
-                        # Defend: set the defending flag
+                        # Defend: set flag and resolve
                         champion.is_defending = True
-                        result = self.damage_resolver.resolve_defend(
-                            champion_id, champion.current_hp
+                        result = self.bridge.resolve_tool_call(
+                            {"action": action_name},
+                            attacker_id=champion_id,
+                            attacker_stats=champion.stats,
+                            target_id=champion_id,
+                            target_stats=champion.stats,
+                            target_hp=champion.current_hp,
+                            target_max_hp=champion.max_hp,
                         )
 
                     elif action_def["heal_range"] is not None:
-                        # Heal: restore HP to self
-                        result = self.damage_resolver.resolve_heal(
-                            action_def,
-                            champion.stats,
-                            champion.current_hp,
-                            champion.max_hp,
+                        # Heal: resolve and apply
+                        result = self.bridge.resolve_tool_call(
+                            {"action": action_name},
+                            attacker_id=champion_id,
+                            attacker_stats=champion.stats,
+                            target_id=champion_id,
+                            target_stats=champion.stats,
+                            target_hp=champion.current_hp,
+                            target_max_hp=champion.max_hp,
                         )
-                        result.attacker_id = champion_id
-                        result.target_id = champion_id
-                        # Apply healing
-                        champion.current_hp = result.target_hp_after
+                        if result:
+                            champion.current_hp = result.target_hp_after
 
                     elif action_def["damage_range"] is not None:
-                        # Attack: deal damage to target
+                        # Attack: find target, resolve, apply
                         target = next(
                             (f for f in fighters if f.id == target_id), None
                         )
                         if target is None or not target.is_alive:
                             continue
 
-                        result = self.damage_resolver.resolve_attack(
-                            action_def,
-                            champion.stats,
-                            target.stats,
-                            target.current_hp,
-                            target.is_defending,
+                        result = self.bridge.resolve_tool_call(
+                            {"action": action_name},
+                            attacker_id=champion_id,
+                            attacker_stats=champion.stats,
+                            target_id=target_id,
+                            target_stats=target.stats,
+                            target_hp=target.current_hp,
+                            target_max_hp=target.max_hp,
+                            target_is_defending=target.is_defending,
                         )
-                        result.attacker_id = champion_id
-                        result.target_id = target_id
-
-                        # Apply damage
-                        target.current_hp = result.target_hp_after
-                        if result.is_kill:
-                            target.is_alive = False
+                        if result:
+                            target.current_hp = result.target_hp_after
+                            if result.is_kill:
+                                target.is_alive = False
                     else:
                         continue
 
                     # Log the resolution
-                    turn_entry.resolutions.append({
-                        "action": result.action_name,
-                        "attacker_id": result.attacker_id,
-                        "target_id": result.target_id,
-                        "raw_roll": result.raw_roll,
-                        "modified_damage": result.modified_damage,
-                        "healing_done": result.healing_done,
-                        "target_hp_before": result.target_hp_before,
-                        "target_hp_after": result.target_hp_after,
-                        "is_kill": result.is_kill,
-                    })
+                    if result:
+                        turn_entry.resolutions.append({
+                            "action": result.action_name,
+                            "attacker_id": result.attacker_id,
+                            "target_id": result.target_id,
+                            "raw_roll": result.raw_roll,
+                            "modified_damage": result.modified_damage,
+                            "healing_done": result.healing_done,
+                            "target_hp_before": result.target_hp_before,
+                            "target_hp_after": result.target_hp_after,
+                            "is_kill": result.is_kill,
+                        })
 
                 # Add this turn's entry to history
                 history.turns.append(asdict(turn_entry))

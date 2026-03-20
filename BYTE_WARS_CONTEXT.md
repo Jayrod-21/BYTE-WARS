@@ -112,7 +112,7 @@ heal               — cost 2, restores [10, 20] HP, requires endurance
 
 ## Current Phase
 
-**Current Phase:** Phase 1 — Battle Engine Core (Complete)
-**Last Completed:** Phase 1 (2026-03-19)
-**Next Task:** Phase 2 — MCP Tool Action System
+**Current Phase:** Phase 5 — Playback & Visualization (Complete)
+**Last Completed:** Phase 5 (2026-03-20)
+**Next Task:** Phase 6 — Web Interface
 **Blocked On:** Nothing currently.
