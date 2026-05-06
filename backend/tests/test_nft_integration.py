@@ -26,6 +26,7 @@ import httpx
 from httpx import ASGITransport
 
 from main import app
+from tests._auth import login_default_user
 from routes.champion import clear_store as clear_champions
 from services.match_service import clear_store as clear_matches
 from services.auth_service import clear_store as clear_users
@@ -41,6 +42,10 @@ async def run_tests():
 
     transport = ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+
+        me = await login_default_user(client)
+        owner_id = me["id"]
+
 
         # ========================================
         # Test 1: NFT Catalog
@@ -69,7 +74,6 @@ async def run_tests():
         # Test 2: Generate Starter Inventory
         # ========================================
         print("\n--- Test 2: Starter Inventory ---")
-        owner_id = "test-owner-1"
         resp = await client.post(f"/api/nft/inventory/{owner_id}/generate")
         assert resp.status_code == 200
         inventory = resp.json()
@@ -94,11 +98,10 @@ async def run_tests():
         assert len(resp.json()) == 6
         print("  PASS: Inventory retrieved")
 
-        # Empty inventory for new user
+        # Inventory is private — querying another user's inventory must be denied.
         resp = await client.get("/api/nft/inventory/new-user")
-        assert resp.status_code == 200
-        assert len(resp.json()) == 0
-        print("  PASS: Empty inventory for new user")
+        assert resp.status_code == 403
+        print("  PASS: Cross-user inventory query forbidden (403)")
 
         # ========================================
         # Test 4: Mint Specific NFT
@@ -246,29 +249,30 @@ async def run_tests():
         # Test 10: Wallet Link
         # ========================================
         print("\n--- Test 10: Wallet Link ---")
-        # Register a user first
+        # Register a user and authenticate as them for the wallet-link calls.
         resp = await client.post("/api/auth/register", json={
             "username": "nft_player",
             "password": "secure123",
         })
         assert resp.status_code == 201
         user_id = resp.json()["user"]["id"]
+        nft_headers = {"Authorization": f"Bearer {resp.json()['token']}"}
 
         resp = await client.post("/api/nft/wallet/link", json={
             "user_id": user_id,
             "wallet_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-        })
+        }, headers=nft_headers)
         assert resp.status_code == 200
         assert resp.json()["wallet_address"] == "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
         print("  PASS: Wallet linked to user account")
 
-        # Non-existent user
+        # Cannot link a wallet to someone else's account.
         resp = await client.post("/api/nft/wallet/link", json={
             "user_id": "fake-id",
             "wallet_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-        })
-        assert resp.status_code == 404
-        print("  PASS: Wallet link rejected for non-existent user")
+        }, headers=nft_headers)
+        assert resp.status_code == 403
+        print("  PASS: Wallet link rejected for cross-user (403)")
 
         # ========================================
         # Test 11: Slot Limit Enforcement
@@ -316,19 +320,27 @@ async def run_tests():
         # Test 12: Ownership Verification
         # ========================================
         print("\n--- Test 12: Ownership Check ---")
-        # Mint for a different owner
+        # Register a separate "other" user and mint into their inventory.
+        resp = await client.post("/api/auth/register", json={
+            "username": "other-owner",
+            "password": "secure123",
+        })
+        assert resp.status_code == 201
+        other_id = resp.json()["user"]["id"]
+        other_headers = {"Authorization": f"Bearer {resp.json()['token']}"}
+
         resp = await client.post("/api/nft/mint", json={
-            "owner_id": "other-owner",
+            "owner_id": other_id,
             "catalog_name": "deaths_whisper",
             "nft_type": "gear",
-        })
+        }, headers=other_headers)
         other_nft_id = resp.json()["id"]
 
-        # Try to equip other owner's NFT
+        # Try to equip other owner's NFT — service-layer ownership check rejects.
         resp = await client.post("/api/nft/equip-gear", json={
             "champion_id": assassin_id,
             "nft_ids": [other_nft_id],
-            "owner_id": owner_id,  # Wrong owner
+            "owner_id": owner_id,  # Wrong owner — current user, not the NFT's owner
         })
         assert resp.status_code == 400
         assert "does not belong" in resp.json()["detail"]

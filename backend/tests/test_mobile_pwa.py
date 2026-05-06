@@ -25,6 +25,7 @@ import httpx
 from httpx import ASGITransport
 
 from main import app
+from tests._auth import login_default_user
 from routes.champion import clear_store as clear_champions
 from services.match_service import clear_store as clear_matches
 from services.auth_service import clear_store as clear_users
@@ -164,6 +165,8 @@ async def run_tests():
     print("\n--- Test 9: API Regression ---")
     transport = ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        await login_default_user(client)
+
         # Health check
         resp = await client.get("/health")
         assert resp.status_code == 200

@@ -11,9 +11,10 @@ Matches run asynchronously — create, start, then poll GET for results.
 """
 
 import asyncio
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from routes._authz import get_current_user
 from services.match_service import MatchService
 from routes.champion import _champions_store
 
@@ -50,7 +51,10 @@ class MatchResponse(BaseModel):
 
 
 @router.post("", response_model=MatchResponse, status_code=201)
-async def create_match(data: MatchCreate) -> dict:
+async def create_match(
+    data: MatchCreate,
+    user: dict = Depends(get_current_user),
+) -> dict:
     """
     Create a new match with 2-4 champions.
 
@@ -77,7 +81,10 @@ async def create_match(data: MatchCreate) -> dict:
 
 
 @router.post("/{match_id}/start", response_model=MatchResponse)
-async def start_match(match_id: str) -> dict:
+async def start_match(
+    match_id: str,
+    user: dict = Depends(get_current_user),
+) -> dict:
     """
     Start a pending match. The battle runs asynchronously in the background.
 

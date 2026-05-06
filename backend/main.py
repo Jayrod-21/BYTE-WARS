@@ -67,13 +67,34 @@ app = FastAPI(
 )
 
 # --- CORS Middleware ---
-# Allow frontend to communicate with the API (permissive for dev)
+# CORS_ORIGINS is a comma-separated allowlist (e.g.
+# "https://bytewars.example.com,https://www.bytewars.example.com").
+# In dev (BW_ENV=dev or unset), localhost frontends are allowed by default.
+# In any other BW_ENV the env var is required — wildcard origins paired with
+# allow_credentials=True is rejected by browsers and silently exposes the
+# API to any origin.
+def _resolve_cors_origins() -> list[str]:
+    raw = os.getenv("CORS_ORIGINS", "").strip()
+    if raw:
+        return [o.strip() for o in raw.split(",") if o.strip()]
+    if os.getenv("BW_ENV", "dev").lower() == "dev":
+        return [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ]
+    raise RuntimeError(
+        "CORS_ORIGINS must be set (comma-separated allowlist) when BW_ENV != 'dev'."
+    )
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Lock this down in production (Phase 11)
+    allow_origins=_resolve_cors_origins(),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # --- Register API Routes ---

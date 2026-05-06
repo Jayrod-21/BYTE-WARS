@@ -12,8 +12,9 @@ core rules: slot limits, base gear protection, API key encryption.
 """
 
 import uuid
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from routes._authz import get_current_user, expected_wallet
 from schemas.champion import ChampionCreate, ChampionUpdate, ChampionResponse
 from services.champion_service import ChampionService
 
@@ -30,18 +31,18 @@ _service = ChampionService()
 
 
 @router.post("", response_model=ChampionResponse, status_code=201)
-async def create_champion(data: ChampionCreate) -> dict:
+async def create_champion(
+    data: ChampionCreate,
+    user: dict = Depends(get_current_user),
+) -> dict:
     """
     Create a new champion.
 
     The champion receives default stats and base gear based on the chosen
     archetype. Base gear is permanent and cannot be removed later.
 
-    Args:
-        data: ChampionCreate schema with name, archetype, and optional fields.
-
-    Returns:
-        The created champion's full profile (API key redacted).
+    The owner is always the authenticated user — `owner_wallet` from the
+    request body is ignored, preventing impersonation.
     """
     try:
         champion_data = _service.build_champion_data(
@@ -52,7 +53,7 @@ async def create_champion(data: ChampionCreate) -> dict:
             skill_slots=data.skill_slots,
             api_key=data.api_key,
             model=data.model,
-            owner_wallet=data.owner_wallet,
+            owner_wallet=expected_wallet(user),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -86,7 +87,11 @@ async def get_champion(champion_id: str) -> dict:
 
 
 @router.patch("/{champion_id}", response_model=ChampionResponse)
-async def update_champion(champion_id: str, data: ChampionUpdate) -> dict:
+async def update_champion(
+    champion_id: str,
+    data: ChampionUpdate,
+    user: dict = Depends(get_current_user),
+) -> dict:
     """
     Update an existing champion.
 
@@ -110,6 +115,10 @@ async def update_champion(champion_id: str, data: ChampionUpdate) -> dict:
     champion = _champions_store.get(champion_id)
     if champion is None:
         raise HTTPException(status_code=404, detail=f"Champion '{champion_id}' not found")
+
+    # Only the owner can mutate their champion.
+    if champion.get("owner_wallet") and champion["owner_wallet"] != expected_wallet(user):
+        raise HTTPException(status_code=403, detail="Not your champion")
 
     # Build updates dict from non-None fields
     updates = data.model_dump(exclude_unset=True)

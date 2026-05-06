@@ -26,6 +26,7 @@ import httpx
 from httpx import ASGITransport
 
 from main import app
+from tests._auth import login_default_user
 from routes.champion import clear_store as clear_champions
 from services.match_service import clear_store as clear_matches
 from services.auth_service import clear_store as clear_users
@@ -44,22 +45,28 @@ async def run_tests():
     transport = ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
 
+        # Auth setup: register users and capture tokens.
+        setup = await client.post("/api/auth/register", json={"username": "setup-user", "password": "secret-pass"})
+        client.headers["Authorization"] = f"Bearer {setup.json()['token']}"
+
         # Setup: create users
         resp = await client.post("/api/auth/register", json={
             "username": "seller1", "password": "secure123",
         })
         seller_id = resp.json()["user"]["id"]
+        h_seller = {"Authorization": f"Bearer {resp.json()['token']}"}
 
         resp = await client.post("/api/auth/register", json={
             "username": "buyer1", "password": "secure123",
         })
         buyer_id = resp.json()["user"]["id"]
+        h_buyer = {"Authorization": f"Bearer {resp.json()['token']}"}
 
-        seller_wallet = f"devnet_{seller_id[:8]}"
-        buyer_wallet = f"devnet_{buyer_id[:8]}"
+        seller_wallet = f"devnet_{seller_id}"
+        buyer_wallet = f"devnet_{buyer_id}"
 
         # Setup: give buyer some SOL
-        await client.post(f"/api/wagers/wallet/{buyer_wallet}/airdrop", json={"amount_sol": 50.0})
+        await client.post(f"/api/wagers/wallet/{buyer_wallet}/airdrop", json={"amount_sol": 50.0}, headers=h_buyer)
 
         # Setup: create champions
         resp = await client.post("/api/champions", json={
@@ -129,25 +136,25 @@ async def run_tests():
         # Mint an NFT for seller
         resp = await client.post("/api/nft/mint", json={
             "owner_id": seller_id, "catalog_name": "void_daggers", "nft_type": "gear",
-        })
+        }, headers=h_seller)
         nft1_id = resp.json()["id"]
         assert resp.json()["owner_wallet"] == seller_id
 
         # Transfer to buyer
         resp = await client.post("/api/nft/transfer", json={
             "nft_id": nft1_id, "from_owner": seller_id, "to_owner": buyer_id,
-        })
+        }, headers=h_seller)
         assert resp.status_code == 200
         assert resp.json()["owner_wallet"] == buyer_id
         print("  PASS: NFT transferred to buyer")
 
         # Verify seller no longer has it
-        resp = await client.get(f"/api/nft/inventory/{seller_id}")
+        resp = await client.get(f"/api/nft/inventory/{seller_id}", headers=h_seller)
         seller_nfts = [n for n in resp.json() if n["id"] == nft1_id]
         assert len(seller_nfts) == 0
 
         # Verify buyer has it
-        resp = await client.get(f"/api/nft/inventory/{buyer_id}")
+        resp = await client.get(f"/api/nft/inventory/{buyer_id}", headers=h_buyer)
         buyer_nfts = [n for n in resp.json() if n["id"] == nft1_id]
         assert len(buyer_nfts) == 1
         print("  PASS: Inventory updated correctly")
@@ -155,14 +162,14 @@ async def run_tests():
         # Cannot transfer what you don't own
         resp = await client.post("/api/nft/transfer", json={
             "nft_id": nft1_id, "from_owner": seller_id, "to_owner": buyer_id,
-        })
+        }, headers=h_seller)
         assert resp.status_code == 400
         print("  PASS: Cannot transfer NFT you don't own")
 
         # Transfer it back for marketplace tests
         resp = await client.post("/api/nft/transfer", json={
             "nft_id": nft1_id, "from_owner": buyer_id, "to_owner": seller_id,
-        })
+        }, headers=h_buyer)
         assert resp.status_code == 200
 
         # ========================================
@@ -171,7 +178,7 @@ async def run_tests():
         print("\n--- Test 5: Create Listing ---")
         resp = await client.post("/api/nft/marketplace/list", json={
             "nft_id": nft1_id, "seller_id": seller_id, "price_sol": 5.0,
-        })
+        }, headers=h_seller)
         assert resp.status_code == 200
         listing = resp.json()
         listing_id = listing["id"]
@@ -183,7 +190,7 @@ async def run_tests():
         # Cannot list same NFT twice
         resp = await client.post("/api/nft/marketplace/list", json={
             "nft_id": nft1_id, "seller_id": seller_id, "price_sol": 10.0,
-        })
+        }, headers=h_seller)
         assert resp.status_code == 400
         assert "already listed" in resp.json()["detail"]
         print("  PASS: Cannot double-list same NFT")
@@ -195,17 +202,17 @@ async def run_tests():
         # Mint another NFT to list and cancel
         resp = await client.post("/api/nft/mint", json={
             "owner_id": seller_id, "catalog_name": "rusty_blade", "nft_type": "gear",
-        })
+        }, headers=h_seller)
         nft2_id = resp.json()["id"]
 
         resp = await client.post("/api/nft/marketplace/list", json={
             "nft_id": nft2_id, "seller_id": seller_id, "price_sol": 1.0,
-        })
+        }, headers=h_seller)
         listing2_id = resp.json()["id"]
 
         resp = await client.post(f"/api/nft/marketplace/{listing2_id}/cancel", json={
             "seller_id": seller_id,
-        })
+        }, headers=h_seller)
         assert resp.status_code == 200
         assert resp.json()["status"] == "cancelled"
         print("  PASS: Listing cancelled")
@@ -213,7 +220,7 @@ async def run_tests():
         # Cannot cancel someone else's listing
         resp = await client.post(f"/api/nft/marketplace/{listing_id}/cancel", json={
             "seller_id": buyer_id,
-        })
+        }, headers=h_buyer)
         assert resp.status_code == 400
         assert "own listings" in resp.json()["detail"]
         print("  PASS: Cannot cancel other's listing")
@@ -224,7 +231,7 @@ async def run_tests():
         print("\n--- Test 7: Purchase ---")
         resp = await client.post(f"/api/nft/marketplace/{listing_id}/buy", json={
             "buyer_id": buyer_id, "buyer_wallet": buyer_wallet,
-        })
+        }, headers=h_buyer)
         assert resp.status_code == 200
         result = resp.json()
         assert result["listing"]["status"] == "sold"
@@ -237,7 +244,7 @@ async def run_tests():
         print("  PASS: Buyer wallet charged")
 
         # Verify NFT is in buyer's inventory
-        resp = await client.get(f"/api/nft/inventory/{buyer_id}")
+        resp = await client.get(f"/api/nft/inventory/{buyer_id}", headers=h_buyer)
         has_nft = any(n["id"] == nft1_id for n in resp.json())
         assert has_nft
         print("  PASS: NFT in buyer's inventory")
@@ -250,11 +257,11 @@ async def run_tests():
         for catalog_name, nft_type in [("fireball", "skill"), ("steel_gauntlets", "gear"), ("archmage_tome", "gear")]:
             resp = await client.post("/api/nft/mint", json={
                 "owner_id": seller_id, "catalog_name": catalog_name, "nft_type": nft_type,
-            })
+            }, headers=h_seller)
             nft_id = resp.json()["id"]
             await client.post("/api/nft/marketplace/list", json={
                 "nft_id": nft_id, "seller_id": seller_id, "price_sol": 2.0,
-            })
+            }, headers=h_seller)
 
         # Browse all
         resp = await client.get("/api/nft/marketplace/browse")
@@ -308,16 +315,16 @@ async def run_tests():
         # Cannot buy own listing
         resp = await client.post("/api/nft/mint", json={
             "owner_id": seller_id, "catalog_name": "deaths_whisper", "nft_type": "gear",
-        })
+        }, headers=h_seller)
         own_nft_id = resp.json()["id"]
         resp = await client.post("/api/nft/marketplace/list", json={
             "nft_id": own_nft_id, "seller_id": seller_id, "price_sol": 50.0,
-        })
+        }, headers=h_seller)
         own_listing_id = resp.json()["id"]
 
         resp = await client.post(f"/api/nft/marketplace/{own_listing_id}/buy", json={
             "buyer_id": seller_id, "buyer_wallet": seller_wallet,
-        })
+        }, headers=h_seller)
         assert resp.status_code == 400
         assert "own listing" in resp.json()["detail"]
         print("  PASS: Cannot buy own listing")
@@ -325,7 +332,7 @@ async def run_tests():
         # Cannot buy sold listing
         resp = await client.post(f"/api/nft/marketplace/{listing_id}/buy", json={
             "buyer_id": buyer_id, "buyer_wallet": buyer_wallet,
-        })
+        }, headers=h_buyer)
         assert resp.status_code == 400
         print("  PASS: Cannot buy already-sold listing")
 
@@ -335,7 +342,7 @@ async def run_tests():
         print("\n--- Test 11: Ownership Check ---")
         resp = await client.post("/api/nft/marketplace/list", json={
             "nft_id": nft1_id, "seller_id": seller_id, "price_sol": 5.0,
-        })
+        }, headers=h_seller)
         assert resp.status_code == 400
         assert "don't own" in resp.json()["detail"]
         print("  PASS: Cannot list NFT you don't own")
