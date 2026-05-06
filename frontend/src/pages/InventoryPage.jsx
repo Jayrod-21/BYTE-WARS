@@ -181,7 +181,7 @@ export default function InventoryPage() {
                     />
                     <div style={{ display: 'flex', gap: 6 }}>
                       <PixelButton variant="acid" onClick={handleList} full>LIST IT</PixelButton>
-                      <PixelButton variant="ghost" onClick={() => setListingFor(null)}>X</PixelButton>
+                      <PixelButton variant="ghost" onClick={() => setListingFor(null)} aria-label="Cancel listing">X</PixelButton>
                     </div>
                   </div>
                 ) : (

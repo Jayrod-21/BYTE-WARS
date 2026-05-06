@@ -126,6 +126,8 @@ export default function ClansPage() {
               </div>
             </div>
             <button type="button" onClick={() => setViewerRole(viewerRole === 'captain' ? 'member' : 'captain')}
+              aria-label={`Toggle clan viewer role; currently ${viewerRole}`}
+              aria-pressed={viewerRole === 'captain'}
               style={{
                 all: 'unset', cursor: 'pointer',
                 padding: '6px 10px',
@@ -134,7 +136,7 @@ export default function ClansPage() {
                 color: viewerRole === 'captain' ? '#1a1400' : 'var(--bw-ink)',
                 boxShadow: 'inset -1px -1px 0 0 #000, inset 1px 1px 0 0 rgba(255,255,255,0.3)',
               }}>
-              {viewerRole === 'captain' ? '👑 CAPTAIN VIEW' : 'MEMBER VIEW'}
+              {viewerRole === 'captain' ? <><span aria-hidden="true">👑</span>{' '}CAPTAIN VIEW</> : 'MEMBER VIEW'}
             </button>
           </div>
         </div>
@@ -175,7 +177,10 @@ export default function ClansPage() {
 
           {/* MEMBERS */}
           <Panel>
-            <button type="button" onClick={() => setRosterOpen(o => !o)} style={{
+            <button type="button" onClick={() => setRosterOpen(o => !o)}
+              aria-expanded={rosterOpen}
+              aria-controls="clan-members-list"
+              style={{
               all: 'unset', cursor: 'pointer', width: '100%',
               display: 'flex', justifyContent: 'space-between',
               fontFamily: 'var(--font-pixel)', fontSize: 9, letterSpacing: '0.08em', color: 'var(--bw-ink)',
@@ -184,7 +189,7 @@ export default function ClansPage() {
               <span style={{ color: 'var(--bw-cyan)' }}>{rosterOpen ? '▾ COLLAPSE' : '▸ EXPAND'}</span>
             </button>
             {rosterOpen && (
-              <div style={{ marginTop: 10 }} className="bw-stack">
+              <div id="clan-members-list" style={{ marginTop: 10 }} className="bw-stack">
                 {members.map(m => (
                   <div key={m.id} style={{
                     display: 'flex', alignItems: 'center', gap: 10, padding: 8,
@@ -216,7 +221,10 @@ export default function ClansPage() {
           {/* JOIN REQUESTS */}
           {viewerRole === 'captain' && (
             <Panel>
-              <button type="button" onClick={() => setRequestsOpen(o => !o)} style={{
+              <button type="button" onClick={() => setRequestsOpen(o => !o)}
+                aria-expanded={requestsOpen}
+                aria-controls="clan-join-requests"
+                style={{
                 all: 'unset', cursor: 'pointer', width: '100%',
                 display: 'flex', justifyContent: 'space-between',
                 fontFamily: 'var(--font-pixel)', fontSize: 9, letterSpacing: '0.08em', color: 'var(--bw-ink)',
@@ -225,7 +233,7 @@ export default function ClansPage() {
                 <span style={{ color: 'var(--bw-cyan)' }}>{requestsOpen ? '▾' : '▸'}</span>
               </button>
               {requestsOpen && (
-                <div style={{ marginTop: 10 }} className="bw-stack">
+                <div id="clan-join-requests" style={{ marginTop: 10 }} className="bw-stack">
                   {requests.length === 0 && <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--bw-ink-dim)' }}>NO PENDING REQUESTS.</div>}
                   {requests.map(r => (
                     <div key={r.id} style={{ padding: 10, background: 'var(--bw-bg)', boxShadow: 'inset 2px 2px 0 0 #000, inset -2px -2px 0 0 var(--bw-line)' }}>

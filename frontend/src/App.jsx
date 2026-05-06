@@ -92,7 +92,7 @@ function HeaderBar({ user, onLogout }) {
 
 function BottomTabs() {
   return (
-    <nav style={{
+    <nav aria-label="Primary" style={{
       position: 'fixed',
       bottom: 0, left: 0, right: 0,
       height: 72,
@@ -106,6 +106,7 @@ function BottomTabs() {
         <NavLink
           key={tab.to}
           to={tab.to}
+          aria-label={tab.label}
           style={({ isActive }) => ({
             flex: 1,
             display: 'flex',
@@ -122,7 +123,7 @@ function BottomTabs() {
             background: isActive ? 'rgba(182,255,60,0.05)' : 'transparent',
           })}
         >
-          <span style={{ fontSize: 18, lineHeight: 1 }}>{tab.icon}</span>
+          <span aria-hidden="true" style={{ fontSize: 18, lineHeight: 1 }}>{tab.icon}</span>
           {tab.label}
         </NavLink>
       ))}

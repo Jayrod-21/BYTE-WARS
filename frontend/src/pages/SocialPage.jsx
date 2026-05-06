@@ -132,12 +132,25 @@ function Row({ friend, rank, showRankBadge }) {
 
       <div style={{ display: 'flex', gap: 4 }}>
         {friend.status === 'online' && (
-          <PixelButton variant="acid" style={{ padding: '6px 8px', fontSize: 8 }} title="Duel">⚔ DUEL</PixelButton>
+          <PixelButton variant="acid" style={{ padding: '6px 8px', fontSize: 8 }}
+            title={`Challenge ${friend.name} to a duel`}
+          >
+            <span aria-hidden="true">⚔</span>{' '}DUEL
+          </PixelButton>
         )}
         {friend.status === 'in-match' && (
-          <PixelButton variant="magenta" style={{ padding: '6px 8px', fontSize: 8 }} title="Watch">👁 WATCH</PixelButton>
+          <PixelButton variant="magenta" style={{ padding: '6px 8px', fontSize: 8 }}
+            title={`Watch ${friend.name}'s match`}
+          >
+            <span aria-hidden="true">👁</span>{' '}WATCH
+          </PixelButton>
         )}
-        <PixelButton variant="ghost" style={{ padding: '6px 8px', fontSize: 8 }} title="Message">💬</PixelButton>
+        <PixelButton variant="ghost" style={{ padding: '6px 8px', fontSize: 8 }}
+          title={`Message ${friend.name}`}
+          aria-label={`Message ${friend.name}`}
+        >
+          <span aria-hidden="true">💬</span>
+        </PixelButton>
       </div>
     </div>
   );
