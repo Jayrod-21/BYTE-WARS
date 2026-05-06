@@ -1,0 +1,312 @@
+/* BYTE WARS — Pixel-art design tokens
+ * Saturated CRT palette, monospace + pixel display fonts, chunky pixel borders.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+
+:root {
+  /* Palette — CRT arcade */
+  --bw-bg: #0a0a12;
+  --bw-bg-2: #11111c;
+  --bw-bg-3: #1a1a2a;
+  --bw-panel: #1f1f31;
+  --bw-panel-2: #292942;
+  --bw-line: #3d3d5c;
+  --bw-line-2: #555577;
+
+  --bw-ink: #e8e8f5;
+  --bw-ink-dim: #9a9ab5;
+  --bw-ink-low: #62627d;
+
+  /* Accent neons */
+  --bw-acid: #b6ff3c;     /* primary, "buy" / "go" */
+  --bw-magenta: #ff3cd0;  /* hot pink, alerts/wager */
+  --bw-cyan: #3cf0ff;     /* secondary info */
+  --bw-yellow: #ffd23c;   /* gold / coin */
+  --bw-blood: #ff3c5c;    /* danger / damage */
+  --bw-purple: #9b3cff;   /* legendary */
+  --bw-orange: #ff8c3c;   /* epic */
+
+  /* Rarity */
+  --bw-rarity-common: #9a9ab5;
+  --bw-rarity-uncommon: #b6ff3c;
+  --bw-rarity-rare: #3cf0ff;
+  --bw-rarity-epic: #ff3cd0;
+  --bw-rarity-legendary: #ffd23c;
+
+  /* Type */
+  --font-pixel: 'Press Start 2P', system-ui, monospace;
+  --font-display: 'VT323', monospace;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Pixel scale */
+  --px: 2px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bw-bg);
+  color: var(--bw-ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  -webkit-font-smoothing: none;
+  font-smoothing: none;
+  text-rendering: geometricPrecision;
+}
+
+/* Pixel-perfect chunky border using box-shadow (no anti-alias) */
+.px-border {
+  box-shadow:
+    inset 0 0 0 var(--px) var(--bw-line-2),
+    0 var(--px) 0 0 #000,
+    0 calc(var(--px) * 2) 0 0 var(--bw-line);
+}
+
+.px-border-acid {
+  box-shadow:
+    inset 0 0 0 var(--px) var(--bw-acid),
+    0 var(--px) 0 0 #000,
+    0 calc(var(--px) * 2) 0 0 color-mix(in oklab, var(--bw-acid), black 60%);
+}
+
+/* Hard-edged "pixel" buttons — implemented via stacked box-shadows so corners stay square + bevel */
+.pxbtn {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  border: none;
+  background: var(--bw-panel-2);
+  color: var(--bw-ink);
+  cursor: pointer;
+  position: relative;
+  text-transform: uppercase;
+  box-shadow:
+    inset -2px -2px 0 0 #000,
+    inset 2px 2px 0 0 var(--bw-line-2),
+    0 4px 0 0 #000;
+  transition: transform 80ms steps(2), box-shadow 80ms steps(2);
+}
+.pxbtn:hover { filter: brightness(1.15); }
+.pxbtn:active {
+  transform: translateY(2px);
+  box-shadow:
+    inset -2px -2px 0 0 #000,
+    inset 2px 2px 0 0 var(--bw-line-2),
+    0 2px 0 0 #000;
+}
+
+.pxbtn-acid {
+  background: var(--bw-acid);
+  color: #0a1a00;
+  box-shadow:
+    inset -2px -2px 0 0 #1d3300,
+    inset 2px 2px 0 0 #e8ffa0,
+    0 4px 0 0 #000;
+}
+.pxbtn-magenta {
+  background: var(--bw-magenta);
+  color: #1a0014;
+  box-shadow:
+    inset -2px -2px 0 0 #4d0036,
+    inset 2px 2px 0 0 #ffb0e8,
+    0 4px 0 0 #000;
+}
+.pxbtn-blood {
+  background: var(--bw-blood);
+  color: #1a0008;
+  box-shadow:
+    inset -2px -2px 0 0 #4d0010,
+    inset 2px 2px 0 0 #ffaab0,
+    0 4px 0 0 #000;
+}
+.pxbtn-cyan {
+  background: var(--bw-cyan);
+  color: #001214;
+  box-shadow:
+    inset -2px -2px 0 0 #003a40,
+    inset 2px 2px 0 0 #aafff0,
+    0 4px 0 0 #000;
+}
+.pxbtn-ghost {
+  background: transparent;
+  color: var(--bw-ink);
+  box-shadow:
+    inset 0 0 0 2px var(--bw-line-2),
+    0 4px 0 0 #000;
+}
+
+/* Pixel panel — chunky inset/outset bevel */
+.panel {
+  background: var(--bw-panel);
+  position: relative;
+  box-shadow:
+    inset -2px -2px 0 0 #000,
+    inset 2px 2px 0 0 var(--bw-line-2),
+    0 4px 0 0 #000;
+}
+.panel-sunken {
+  background: var(--bw-bg);
+  box-shadow:
+    inset 2px 2px 0 0 #000,
+    inset -2px -2px 0 0 var(--bw-line-2);
+}
+
+/* Scanlines overlay */
+.scanlines {
+  position: relative;
+}
+.scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0,0,0,0) 0px,
+    rgba(0,0,0,0) 2px,
+    rgba(0,0,0,0.18) 2px,
+    rgba(0,0,0,0.18) 3px
+  );
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  z-index: 5;
+}
+
+/* CRT subtle vignette */
+.crt-vignette::before {
+  content:"";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%);
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Pixel HP / progress bar — solid blocks */
+.hpbar {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  padding: 2px;
+  background: #000;
+  box-shadow: inset 0 0 0 2px var(--bw-line);
+}
+.hpbar > i {
+  flex: 1;
+  background: var(--bw-acid);
+  box-shadow: inset 0 -2px 0 0 #1d3300, inset 0 2px 0 0 #e8ffa0;
+}
+.hpbar > i.off { background: #0a0a12; box-shadow: inset 0 0 0 1px #1a1a2a; }
+.hpbar.hp-dmg > i { background: var(--bw-blood); box-shadow: inset 0 -2px 0 0 #4d0010, inset 0 2px 0 0 #ffaab0; }
+.hpbar.hp-mid > i { background: var(--bw-yellow); box-shadow: inset 0 -2px 0 0 #4d3a00, inset 0 2px 0 0 #fff0a0; }
+
+/* Action point pip */
+.ap-pip {
+  width: 14px; height: 14px;
+  background: var(--bw-cyan);
+  box-shadow:
+    inset -2px -2px 0 0 #003a40,
+    inset 2px 2px 0 0 #aafff0;
+}
+.ap-pip.off { background: #0a0a12; box-shadow: inset 0 0 0 2px var(--bw-line); }
+
+/* Headings */
+.h-display { font-family: var(--font-pixel); letter-spacing: 0.04em; line-height: 1.4; }
+.h-mono    { font-family: var(--font-mono); font-weight: 800; letter-spacing: 0.02em; }
+.h-vt      { font-family: var(--font-display); }
+
+/* Crisp pixel-rendered images */
+.pixelated { image-rendering: pixelated; image-rendering: crisp-edges; }
+
+/* Blinking caret */
+@keyframes bw-blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+.blink { animation: bw-blink 1s steps(2) infinite; }
+
+/* Marquee scroll */
+@keyframes bw-marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+.marquee { display: inline-flex; gap: 48px; animation: bw-marquee 40s linear infinite; white-space: nowrap; }
+
+/* Glow text — single hard shadow, not blur */
+.glow-acid { color: var(--bw-acid); text-shadow: 0 0 0 var(--bw-acid), 2px 2px 0 #1d3300; }
+.glow-magenta { color: var(--bw-magenta); text-shadow: 0 0 0 var(--bw-magenta), 2px 2px 0 #4d0036; }
+.glow-cyan { color: var(--bw-cyan); text-shadow: 0 0 0 var(--bw-cyan), 2px 2px 0 #003a40; }
+.glow-yellow { color: var(--bw-yellow); text-shadow: 2px 2px 0 #4d3a00; }
+
+/* Diagonal stripes (placeholder fill) */
+.stripes-purple {
+  background-image: repeating-linear-gradient(45deg, #2a1a4d 0 6px, #1a0a3a 6px 12px);
+}
+.stripes-acid {
+  background-image: repeating-linear-gradient(45deg, #1a3a00 0 6px, #0a1a00 6px 12px);
+}
+.stripes-magenta {
+  background-image: repeating-linear-gradient(45deg, #4a0a3a 0 6px, #2a0a22 6px 12px);
+}
+.stripes-cyan {
+  background-image: repeating-linear-gradient(45deg, #0a3a4a 0 6px, #0a222a 6px 12px);
+}
+
+/* Damage popup */
+@keyframes dmg-pop {
+  0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
+  20% { transform: translate(-50%, -8px) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -32px) scale(1); opacity: 0; }
+}
+
+/* Battle motion */
+@keyframes bw-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.bob { animation: bw-bob 600ms steps(2) infinite; }
+
+@keyframes bw-recoil-r { 0% { transform: translateX(0); } 25% { transform: translateX(14px) rotate(6deg); } 100% { transform: translateX(0); } }
+@keyframes bw-recoil-l { 0% { transform: translateX(0); } 25% { transform: translateX(-14px) rotate(-6deg); } 100% { transform: translateX(0); } }
+.recoil-r { animation: bw-recoil-r 500ms steps(6); }
+.recoil-l { animation: bw-recoil-l 500ms steps(6); }
+
+@keyframes bw-attack-r { 0% { transform: translateX(0); } 40% { transform: translateX(8px); } 60% { transform: translateX(8px); } 100% { transform: translateX(0); } }
+@keyframes bw-attack-l { 0% { transform: translateX(0); } 40% { transform: translateX(-8px); } 60% { transform: translateX(-8px); } 100% { transform: translateX(0); } }
+.attack-r { animation: bw-attack-r 600ms steps(4); }
+.attack-l { animation: bw-attack-l 600ms steps(4); }
+
+@keyframes bw-fx-burst {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  20% { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
+  60% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+}
+.fx-burst { animation: bw-fx-burst 600ms steps(8); }
+
+@keyframes bw-aura-spin { from { transform: translate(-50%,-50%) rotate(0); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+@keyframes aura-spin { from { transform: translate(-50%,-50%) rotate(0); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+@keyframes bw-banner-in {
+  0% { transform: translate(-50%, -20px) scale(0.5); opacity: 0; }
+  20% { transform: translate(-50%, 0) scale(1.1); opacity: 1; }
+  80% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+}
+.banner-in { animation: bw-banner-in 500ms steps(8); }
+
+@keyframes bw-shake {
+  0%,100% { transform: translate(0,0); }
+  10% { transform: translate(-2px, 1px); }
+  20% { transform: translate(2px, -1px); }
+  30% { transform: translate(-3px, 2px); }
+  40% { transform: translate(3px, -2px); }
+  50% { transform: translate(-2px, 1px); }
+  60% { transform: translate(2px, -1px); }
+  70% { transform: translate(-1px, 1px); }
+}
+.shake { animation: bw-shake 400ms steps(8); }
+
+/* Sprite facing flip */
+.face-l { transform: scaleX(-1); }
+
+/* Hide scrollbars where appropriate */
+.no-scroll::-webkit-scrollbar { display: none; }
+.no-scroll { scrollbar-width: none; }
+
+/* Utility */
+.row { display: flex; }
+.col { display: flex; flex-direction: column; }
