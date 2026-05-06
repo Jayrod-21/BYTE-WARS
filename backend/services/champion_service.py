@@ -12,8 +12,11 @@ the ENCRYPTION_KEY environment variable (generated once, stored securely).
 For dev, a default key is used — MUST be replaced in production (Phase 11).
 """
 
+import logging
 import os
 import uuid
+from pathlib import Path
+
 from cryptography.fernet import Fernet
 
 from engine.archetypes import (
@@ -26,16 +29,59 @@ from engine.archetypes import (
 )
 
 
-# --- Encryption Setup ---
-# Load encryption key from environment, or generate a dev-only default
-# WARNING: The default key is for development ONLY. Set ENCRYPTION_KEY in production.
-_ENV_KEY = os.getenv("ENCRYPTION_KEY")
-if _ENV_KEY:
-    _FERNET = Fernet(_ENV_KEY.encode())
-else:
-    # Generate a stable dev key (deterministic so restarts don't lose data)
-    _DEV_KEY = Fernet.generate_key()
-    _FERNET = Fernet(_DEV_KEY)
+logger = logging.getLogger(__name__)
+
+
+def _load_encryption_key() -> bytes:
+    """
+    Load the Fernet encryption key used to encrypt champion API keys at rest.
+
+    Behavior:
+    - If `ENCRYPTION_KEY` env var is set, use it. The key must be a valid
+      Fernet key (44 url-safe base64 chars). Invalid keys raise immediately.
+    - Otherwise, when `BW_ENV` is unset or "dev", read or generate
+      `~/.bytewars_dev_encryption_key`. This persists across restarts so
+      previously-encrypted records remain readable in local dev. The file
+      is chmod 600 and explicitly gitignored.
+    - In any other `BW_ENV` value (e.g. "production", "staging"), refuse to
+      start. Without a stable key, every restart corrupts every encrypted
+      record permanently — that must be a startup failure, not a silent
+      data-loss bug.
+    """
+    env_key = os.getenv("ENCRYPTION_KEY")
+    if env_key:
+        # Validate format (Fernet will raise on bad input).
+        Fernet(env_key.encode())
+        return env_key.encode()
+
+    env = os.getenv("BW_ENV", "dev").lower()
+    if env != "dev":
+        raise RuntimeError(
+            f"ENCRYPTION_KEY must be set when BW_ENV={env!r}. "
+            "Refusing to start with an in-memory key — restarts would "
+            "permanently corrupt every encrypted champion API key."
+        )
+
+    # Dev fallback: persist a key so restarts don't lose data.
+    key_path = Path(os.path.expanduser("~/.bytewars_dev_encryption_key"))
+    if key_path.exists():
+        return key_path.read_bytes().strip()
+
+    new_key = Fernet.generate_key()
+    key_path.write_bytes(new_key)
+    try:
+        os.chmod(key_path, 0o600)
+    except OSError:
+        pass
+    logger.warning(
+        "ENCRYPTION_KEY not set. Generated a new dev key at %s. "
+        "Set ENCRYPTION_KEY in your .env for production deploys.",
+        key_path,
+    )
+    return new_key
+
+
+_FERNET = Fernet(_load_encryption_key())
 
 
 def encrypt_api_key(api_key: str) -> str:
