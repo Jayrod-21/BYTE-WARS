@@ -211,6 +211,14 @@ export async function getUserChests(ownerId) {
   return request(`/nft/chests/${ownerId}`);
 }
 
+export async function getInventory(ownerId) {
+  return request(`/nft/inventory/${ownerId}`);
+}
+
+export async function generateInventory(ownerId) {
+  return request(`/nft/inventory/${ownerId}/generate`, { method: 'POST' });
+}
+
 export async function transferNFT(nftId, fromOwner, toOwner) {
   return request('/nft/transfer', {
     method: 'POST',
