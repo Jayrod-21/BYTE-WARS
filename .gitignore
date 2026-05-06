@@ -1,3 +1,6 @@
 *.pyc
 __pycache__/
 .env
+
+# Dev-cycle workflow artifacts
+.workflow/
