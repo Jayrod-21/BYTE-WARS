@@ -1,5 +1,61 @@
-/* BYTE Wars — Reset & Base */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* BYTE Wars — Reset & Base (tokens.css owns the rest) */
 html { font-size: 16px; }
-body { background: #0a0a1a; color: #e0e0e0; font-family: 'Courier New', monospace; }
-#root { min-height: 100vh; display: flex; flex-direction: column; }
+#root { min-height: 100vh; display: flex; flex-direction: column; background: var(--bw-bg); color: var(--bw-ink); }
+
+/* Inputs / textareas — terminal style */
+input, textarea, select {
+  font-family: var(--font-mono);
+  background: var(--bw-bg);
+  color: var(--bw-ink);
+  border: none;
+  outline: none;
+  padding: 10px 12px;
+  font-size: 13px;
+  box-shadow: inset 2px 2px 0 0 #000, inset -2px -2px 0 0 var(--bw-line-2);
+}
+input:focus, textarea:focus, select:focus {
+  box-shadow: inset 2px 2px 0 0 #000, inset -2px -2px 0 0 var(--bw-acid);
+}
+button { font-family: var(--font-pixel); }
+
+a { color: var(--bw-cyan); text-decoration: none; }
+a:hover { color: var(--bw-acid); }
+
+/* Page container */
+.bw-page { padding: 16px 16px 96px; max-width: 1280px; margin: 0 auto; }
+@media (min-width: 768px) {
+  .bw-page { padding: 20px 24px 24px; }
+}
+
+/* Section heading */
+.bw-h1 {
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  margin: 0 0 16px;
+  color: var(--bw-acid);
+  text-transform: uppercase;
+}
+.bw-h2 {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  margin: 0 0 10px;
+  color: var(--bw-ink);
+  text-transform: uppercase;
+}
+.bw-h3 {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--bw-ink-dim);
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+
+/* Common spacing helpers */
+.bw-stack > * + * { margin-top: 12px; }
+.bw-stack-lg > * + * { margin-top: 20px; }
+.bw-row { display: flex; gap: 12px; align-items: center; }
+.bw-row-wrap { display: flex; gap: 12px; flex-wrap: wrap; }
+.bw-grow { flex: 1 1 auto; }
