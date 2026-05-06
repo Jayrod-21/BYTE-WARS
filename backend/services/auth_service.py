@@ -7,7 +7,9 @@ Handles user registration, login, and token management:
 - In-memory user store (Phase 6, replaced with DB later)
 """
 
+import logging
 import os
+import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
 
@@ -15,8 +17,50 @@ import bcrypt
 import jwt
 
 
-# JWT configuration
-JWT_SECRET = os.getenv("JWT_SECRET", "byte-wars-dev-secret-change-in-production")
+logger = logging.getLogger(__name__)
+
+
+def _load_jwt_secret() -> str:
+    """
+    Load the JWT signing secret.
+
+    Behavior:
+    - If `JWT_SECRET` env var is set, use it (must be >= 32 chars).
+    - Otherwise, when `BW_ENV` is unset or "dev", generate a per-process
+      random secret and log a loud warning. This is acceptable for local
+      development — all tokens become invalid on restart, but no leaked
+      static fallback exists.
+    - In any other `BW_ENV` value (e.g. "production", "staging"), refuse
+      to start. A misconfigured deploy must fail fast rather than silently
+      sign tokens with a publicly known constant.
+    """
+    secret = os.getenv("JWT_SECRET")
+    env = os.getenv("BW_ENV", "dev").lower()
+
+    if secret:
+        if len(secret) < 32:
+            raise RuntimeError(
+                "JWT_SECRET is too short (minimum 32 chars). "
+                "Generate one with `python -c 'import secrets; print(secrets.token_urlsafe(48))'`."
+            )
+        return secret
+
+    if env == "dev":
+        ephemeral = secrets.token_urlsafe(48)
+        logger.warning(
+            "JWT_SECRET is not set; using an ephemeral per-process secret for BW_ENV=dev. "
+            "All issued tokens will be invalidated on restart. "
+            "Set JWT_SECRET in your .env to persist sessions across reloads."
+        )
+        return ephemeral
+
+    raise RuntimeError(
+        f"JWT_SECRET must be set when BW_ENV={env!r}. "
+        "Refusing to start with a public fallback secret."
+    )
+
+
+JWT_SECRET = _load_jwt_secret()
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
