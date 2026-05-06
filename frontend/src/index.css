@@ -59,3 +59,29 @@ a:hover { color: var(--bw-acid); }
 .bw-row { display: flex; gap: 12px; align-items: center; }
 .bw-row-wrap { display: flex; gap: 12px; flex-wrap: wrap; }
 .bw-grow { flex: 1 1 auto; }
+
+/* Responsive 2-column layout: main + side-rail.
+ * Stacks vertically below 768px so the right rail (detail panel /
+ * shoutbox / featured item) doesn't get crushed into a 120px column
+ * on phones. */
+.bw-split {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 768px) {
+  .bw-split { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+}
+
+/* Stat-row: label + bar + buttons. Stacks under 480px so the
+ * progress bar isn't crushed into a sliver next to the +/- buttons. */
+.bw-stat-row {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 480px) {
+  .bw-stat-row { grid-template-columns: 90px 1fr 110px; }
+}

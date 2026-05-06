@@ -268,7 +268,7 @@ function StatRow({ label, base, spent, color, onInc, onDec, canInc, canDec }) {
   const baseFraction = base / Math.max(1, base + spent + 30);
   const spentFraction = spent / Math.max(1, base + spent + 30);
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr 110px', gap: 12, alignItems: 'center' }}>
+    <div className="bw-stat-row">
       <div style={{ fontFamily: 'var(--font-pixel)', fontSize: 8, letterSpacing: '0.08em', color: 'var(--bw-ink)' }}>
         {label}
       </div>

@@ -102,7 +102,7 @@ export default function InventoryPage() {
       {loading && <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--bw-ink-dim)' }}>LOADING…</div>}
 
       {tab === 'inventory' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 16, alignItems: 'start' }}>
+        <div className="bw-split">
           <div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
               <Chip active={!filter} onClick={() => setFilter('')}>ALL · {items.length}</Chip>
