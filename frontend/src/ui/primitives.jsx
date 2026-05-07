@@ -143,13 +143,29 @@ export function archetypeSprite(arch) {
   return "tank";
 }
 
-export function Sprite({ kind = "tank", scale = 6, style = {}, glow = null, className = "" }) {
+export function Sprite({
+  kind = "tank",
+  scale = 6,
+  style = {},
+  glow = null,
+  className = "",
+  decorative = false,
+  label,
+}) {
   const map = SPRITES[kind] || SPRITES.tank;
   const w = map[0].length;
   const h = map.length;
+  // Sprites are rendered as <span>-mosaics, so screen readers see no
+  // semantic content. Default presentational sprites to aria-hidden;
+  // when a sprite is the *only* identifier for a champion, callers
+  // pass `label="champion name"` (or the kind) to make it accessible.
+  const ariaProps = decorative
+    ? { "aria-hidden": "true" }
+    : { role: "img", "aria-label": label || `${kind} champion sprite` };
   return (
     <div
       className={`pixelated ${className}`}
+      {...ariaProps}
       style={{
         width: w * scale,
         height: h * scale,
@@ -324,12 +340,15 @@ export const ITEMS = {
   ],
 };
 
-export function ItemIcon({ kind = "sword", scale = 4, style = {} }) {
+export function ItemIcon({ kind = "sword", scale = 4, style = {}, decorative = false, label }) {
   const map = ITEMS[kind] || ITEMS.sword;
   const w = (map[0] || "............").length;
   const h = map.length;
+  const ariaProps = decorative
+    ? { "aria-hidden": "true" }
+    : { role: "img", "aria-label": label || `${kind} item icon` };
   return (
-    <div className="pixelated" style={{ width: w * scale, height: h * scale, position: "relative", ...style }}>
+    <div className="pixelated" {...ariaProps} style={{ width: w * scale, height: h * scale, position: "relative", ...style }}>
       {map.map((row, y) =>
         [...row].map((ch, x) => {
           const c = PALETTE[ch];
@@ -389,7 +408,11 @@ export function Pill({ children, color = "var(--bw-line)", textColor, style }) {
   );
 }
 
-export function PixelButton({ variant = "default", children, onClick, type = "button", style, full = false, disabled = false, title }) {
+export function PixelButton({
+  variant = "default", children, onClick, type = "button",
+  style, full = false, disabled = false, title,
+  "aria-label": ariaLabel,
+}) {
   const cls = "pxbtn" + (variant !== "default" ? " pxbtn-" + variant : "");
   return (
     <button
@@ -398,6 +421,7 @@ export function PixelButton({ variant = "default", children, onClick, type = "bu
       onClick={onClick}
       disabled={disabled}
       title={title}
+      aria-label={ariaLabel}
       style={{
         width: full ? "100%" : undefined,
         opacity: disabled ? 0.4 : 1,
