@@ -1,5 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getUser, createListing, getUserChests } from '../services/api';
+import {
+  getUser, createListing, getUserChests,
+  getInventory, generateInventory,
+} from '../services/api';
 import {
   PixelButton, Pill, ItemIcon, rarityColor, Panel, SolDiamond,
 } from '../ui/primitives';
@@ -40,15 +43,14 @@ export default function InventoryPage() {
 
   async function loadInventory() {
     setLoading(true);
+    setError('');
     try {
-      let resp = await fetch(`/api/nft/inventory/${ownerId}`);
-      let data = await resp.json();
+      let data = await getInventory(ownerId);
       if (!Array.isArray(data) || data.length === 0) {
-        resp = await fetch(`/api/nft/inventory/${ownerId}/generate`, { method: 'POST' });
-        data = await resp.json();
+        data = await generateInventory(ownerId);
       }
-      setItems(data || []);
-      if (data && data[0]) setSelected(data[0]);
+      setItems(Array.isArray(data) ? data : []);
+      if (Array.isArray(data) && data[0]) setSelected(data[0]);
     } catch (err) {
       setError(err.message);
     } finally {
