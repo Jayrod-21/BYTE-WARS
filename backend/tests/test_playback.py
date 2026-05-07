@@ -24,6 +24,7 @@ import httpx
 from httpx import ASGITransport
 
 from main import app
+from tests._auth import login_default_user
 from routes.champion import clear_store as clear_champions
 from services.match_service import clear_store as clear_matches
 
@@ -35,6 +36,9 @@ async def run_tests():
 
     transport = ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+
+        await login_default_user(client)
+
 
         # --- Setup: Create champions and run a match ---
         print("\n--- Setup: Create Champions & Run Match ---")

@@ -29,6 +29,7 @@ import asyncio
 from httpx import ASGITransport
 
 from main import app
+from tests._auth import login_default_user
 from routes.champion import clear_store
 
 
@@ -39,6 +40,9 @@ async def run_tests():
 
     transport = ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+
+        await login_default_user(client)
+
 
         print("\n--- Test 1: Create Champions (All 5 Archetypes) ---")
         archetypes = ["tank", "assassin", "mage", "ranger", "support"]

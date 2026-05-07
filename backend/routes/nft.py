@@ -21,9 +21,10 @@ Phase 9:
 - GET    /nft/chests/{owner_id}         — Get user's loot chests
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from routes._authz import get_current_user, require_self
 from services.nft_service import NFTService
 from models.nft import GEAR_CATALOG, SKILL_CATALOG
 from routes.champion import _champions_store
@@ -46,20 +47,35 @@ class EquipRequest(BaseModel):
 
 
 @router.get("/inventory/{owner_id}")
-async def get_inventory(owner_id: str) -> list[dict]:
-    """Get all NFT items owned by a user."""
+async def get_inventory(
+    owner_id: str,
+    user: dict = Depends(get_current_user),
+) -> list[dict]:
+    """Get all NFT items owned by a user. Requires the request to be made
+    as that user — inventory contents are private."""
+    require_self(owner_id, user)
     return _service.get_inventory(owner_id)
 
 
 @router.post("/inventory/{owner_id}/generate")
-async def generate_inventory(owner_id: str) -> list[dict]:
-    """Generate a starter inventory of stub NFTs for testing."""
+async def generate_inventory(
+    owner_id: str,
+    user: dict = Depends(get_current_user),
+) -> list[dict]:
+    """Generate a starter inventory of stub NFTs for testing. Requires
+    the path owner to match the caller — anyone could otherwise spam
+    inventory generation against arbitrary user ids."""
+    require_self(owner_id, user)
     return _service.generate_inventory(owner_id)
 
 
 @router.post("/mint")
-async def mint_nft(data: MintRequest) -> dict:
-    """Mint a specific stub NFT from the catalog."""
+async def mint_nft(
+    data: MintRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    """Mint a specific stub NFT from the catalog into the caller's inventory."""
+    require_self(data.owner_id, user)
     result = _service.mint_stub_nft(data.owner_id, data.catalog_name, data.nft_type)
     if result is None:
         raise HTTPException(
@@ -70,8 +86,12 @@ async def mint_nft(data: MintRequest) -> dict:
 
 
 @router.post("/equip-gear")
-async def equip_gear(data: EquipRequest) -> dict:
+async def equip_gear(
+    data: EquipRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
     """Equip NFT gear items to a champion's gear slots."""
+    require_self(data.owner_id, user)
     champion = _champions_store.get(data.champion_id)
     if champion is None:
         raise HTTPException(status_code=404, detail="Champion not found")
@@ -85,8 +105,12 @@ async def equip_gear(data: EquipRequest) -> dict:
 
 
 @router.post("/equip-skills")
-async def equip_skills(data: EquipRequest) -> dict:
+async def equip_skills(
+    data: EquipRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
     """Equip NFT skill items to a champion's skill slots."""
+    require_self(data.owner_id, user)
     champion = _champions_store.get(data.champion_id)
     if champion is None:
         raise HTTPException(status_code=404, detail="Champion not found")
@@ -119,19 +143,23 @@ class WalletLinkRequest(BaseModel):
 
 
 @router.post("/wallet/link")
-async def link_wallet(data: WalletLinkRequest) -> dict:
+async def link_wallet(
+    data: WalletLinkRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
     """
     Link a Solana wallet address to a user account.
 
     In Phase 7 this is a simple mapping. Phase 8+ will verify
     wallet ownership via signature challenge.
     """
+    require_self(data.user_id, user)
     from services.auth_service import _users_store
-    user = _users_store.get(data.user_id)
-    if user is None:
+    record = _users_store.get(data.user_id)
+    if record is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user["wallet_address"] = data.wallet_address
+    record["wallet_address"] = data.wallet_address
     return {
         "status": "ok",
         "user_id": data.user_id,
@@ -150,8 +178,13 @@ class TransferRequest(BaseModel):
 
 
 @router.post("/transfer")
-async def transfer_nft(data: TransferRequest) -> dict:
-    """Transfer an NFT from one owner to another."""
+async def transfer_nft(
+    data: TransferRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    """Transfer an NFT from the authenticated user to another owner.
+    `from_owner` must equal the caller — preventing trivial NFT theft."""
+    require_self(data.from_owner, user)
     try:
         nft = _service.transfer_nft(data.nft_id, data.from_owner, data.to_owner)
     except ValueError as e:
@@ -179,8 +212,13 @@ class CancelListingRequest(BaseModel):
 
 
 @router.post("/marketplace/list")
-async def create_listing(data: ListNFTRequest) -> dict:
-    """List an NFT for sale on the marketplace."""
+async def create_listing(
+    data: ListNFTRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    """List an NFT for sale on the marketplace. seller_id must match the
+    authenticated user — preventing listing of NFTs the caller doesn't own."""
+    require_self(data.seller_id, user)
     try:
         listing = _service.create_listing(data.nft_id, data.seller_id, data.price_sol)
     except ValueError as e:
@@ -189,8 +227,13 @@ async def create_listing(data: ListNFTRequest) -> dict:
 
 
 @router.post("/marketplace/{listing_id}/cancel")
-async def cancel_listing(listing_id: str, data: CancelListingRequest) -> dict:
-    """Cancel a marketplace listing."""
+async def cancel_listing(
+    listing_id: str,
+    data: CancelListingRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    """Cancel a marketplace listing. seller_id must match the caller."""
+    require_self(data.seller_id, user)
     try:
         listing = _service.cancel_listing(listing_id, data.seller_id)
     except ValueError as e:
@@ -199,8 +242,13 @@ async def cancel_listing(listing_id: str, data: CancelListingRequest) -> dict:
 
 
 @router.post("/marketplace/{listing_id}/buy")
-async def buy_listing(listing_id: str, data: BuyNFTRequest) -> dict:
-    """Purchase an NFT from the marketplace."""
+async def buy_listing(
+    listing_id: str,
+    data: BuyNFTRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    """Purchase an NFT from the marketplace. buyer_id must match the caller."""
+    require_self(data.buyer_id, user)
     try:
         listing, nft = _service.purchase_listing(listing_id, data.buyer_id, data.buyer_wallet)
     except ValueError as e:
@@ -249,5 +297,12 @@ async def get_nft_detail(nft_id: str) -> dict:
 
 @router.get("/chests/{owner_id}")
 async def get_user_chests(owner_id: str) -> list[dict]:
-    """Get all loot chests for a user."""
+    """Get all loot chests for an owner.
+
+    Note: in the current data model `owner_id` here is the champion id
+    (chests are awarded to match-winning champions). This endpoint is
+    therefore left public — it cannot reliably authorize against a user
+    until champions get a stable owner_user_id field. See follow-up
+    work in the auth-routes-cors PR.
+    """
     return _service.get_user_chests(owner_id)

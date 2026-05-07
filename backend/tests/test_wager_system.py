@@ -26,6 +26,7 @@ import httpx
 from httpx import ASGITransport
 
 from main import app
+from tests._auth import login_default_user
 from routes.champion import clear_store as clear_champions
 from services.match_service import clear_store as clear_matches
 from services.auth_service import clear_store as clear_users
@@ -44,6 +45,13 @@ async def run_tests():
     transport = ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
 
+        # Auth: register a setup user; bettor1/bettor2 are registered below and switch headers per call.
+        setup = await client.post("/api/auth/register", json={"username": "setup-user", "password": "secret-pass"})
+        client.headers["Authorization"] = f"Bearer {setup.json()['token']}"
+
+        await login_default_user(client)
+
+
         # Setup: create champions for testing
         champ_ids = []
         for name, arch in [("Wager Tank", "tank"), ("Wager Assassin", "assassin"),
@@ -60,15 +68,20 @@ async def run_tests():
         })
         assert resp.status_code == 201
         user1_id = resp.json()["user"]["id"]
+        token1 = resp.json()["token"]
+        h1 = {"Authorization": f"Bearer {token1}"}
 
         resp = await client.post("/api/auth/register", json={
             "username": "bettor2", "password": "secure123",
         })
         assert resp.status_code == 201
         user2_id = resp.json()["user"]["id"]
+        token2 = resp.json()["token"]
+        h2 = {"Authorization": f"Bearer {token2}"}
+        client.headers["Authorization"] = f"Bearer {token1}"  # default to user1
 
-        wallet1 = f"devnet_{user1_id[:8]}"
-        wallet2 = f"devnet_{user2_id[:8]}"
+        wallet1 = f"devnet_{user1_id}"
+        wallet2 = f"devnet_{user2_id}"
 
         # ========================================
         # Test 1: Wallet Creation & Balance
@@ -128,7 +141,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[0],
             "amount_sol": 0.001,
-        })
+        }, headers=h2)
         assert resp.status_code == 400
         assert "Minimum" in resp.json()["detail"]
         print("  PASS: Minimum wager enforced")
@@ -140,7 +153,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[0],
             "amount_sol": 200.0,
-        })
+        }, headers=h2)
         assert resp.status_code == 400
         assert "Maximum" in resp.json()["detail"]
         print("  PASS: Maximum wager enforced")
@@ -152,7 +165,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[2],  # Not in this match
             "amount_sol": 1.0,
-        })
+        }, headers=h2)
         assert resp.status_code == 400
         assert "not in this match" in resp.json()["detail"]
         print("  PASS: Champion not in match rejected")
@@ -176,7 +189,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[0],
             "amount_sol": 1.0,
-        })
+        }, headers=h2)
         assert resp.status_code == 404
         print("  PASS: Non-existent match rejected")
 
@@ -191,14 +204,14 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[1],
             "amount_sol": 2.0,
-        })
+        }, headers=h2)
         assert resp.status_code == 200
         wager2_id = resp.json()["id"]
 
         # Cancel it
         resp = await client.post(f"/api/wagers/{wager2_id}/cancel", json={
             "user_id": user2_id,
-        })
+        }, headers=h2)
         assert resp.status_code == 200
         assert resp.json()["status"] == "cancelled"
         print("  PASS: Wager cancelled")
@@ -211,7 +224,7 @@ async def run_tests():
         # Cannot cancel someone else's wager
         resp = await client.post(f"/api/wagers/{wager1_id}/cancel", json={
             "user_id": user2_id,
-        })
+        }, headers=h2)
         assert resp.status_code == 400
         assert "own wagers" in resp.json()["detail"]
         print("  PASS: Cannot cancel other user's wager")
@@ -227,7 +240,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[1],
             "amount_sol": 3.0,
-        })
+        }, headers=h2)
         assert resp.status_code == 200
 
         # Check escrow before match start
@@ -340,7 +353,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[1],
             "amount_sol": 8.0,
-        })
+        }, headers=h2)
         assert resp.status_code == 200
 
         # Check odds
@@ -432,7 +445,7 @@ async def run_tests():
             "wallet_address": wallet2,
             "champion_id": champ_ids[1],
             "amount_sol": 10.0,
-        })
+        }, headers=h2)
         assert resp.status_code == 200
 
         # Verify escrow

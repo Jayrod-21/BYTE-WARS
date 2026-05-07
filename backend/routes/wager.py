@@ -12,9 +12,15 @@ Provides wagering functionality:
 - POST   /wagers/wallet/{address}/airdrop — Airdrop devnet SOL (testing)
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from routes._authz import (
+    get_current_user,
+    require_self,
+    expected_wallet,
+    require_dev_env,
+)
 from services.wager_service import WagerService
 from services.match_service import MatchService
 
@@ -25,7 +31,10 @@ _match_service = MatchService()
 
 
 class PlaceWagerRequest(BaseModel):
-    """Request to place a wager."""
+    """Request to place a wager. user_id and wallet_address must match the
+    authenticated principal — they are still accepted in the body for
+    backward compat with the existing frontend, but the server validates
+    them."""
     match_id: str
     user_id: str
     wallet_address: str
@@ -44,13 +53,27 @@ class AirdropRequest(BaseModel):
 
 
 @router.post("/place")
-async def place_wager(data: PlaceWagerRequest) -> dict:
+async def place_wager(
+    data: PlaceWagerRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
     """
     Place a wager on a champion in a pending match.
 
     The wager amount is locked from the user's wallet balance.
     Wagers can only be placed before the match starts.
+
+    Requires authentication; the body's `user_id` and `wallet_address`
+    must match the authenticated principal so a logged-in user cannot
+    place wagers on someone else's behalf.
     """
+    require_self(data.user_id, user)
+    if data.wallet_address != expected_wallet(user):
+        raise HTTPException(
+            status_code=403,
+            detail="wallet_address does not match authenticated user",
+        )
+
     # Look up the match
     match_data = _match_service.get_match(data.match_id)
     if match_data is None:
@@ -73,8 +96,15 @@ async def place_wager(data: PlaceWagerRequest) -> dict:
 
 
 @router.post("/{wager_id}/cancel")
-async def cancel_wager(wager_id: str, data: CancelWagerRequest) -> dict:
-    """Cancel a placed (not yet locked) wager. Funds are returned."""
+async def cancel_wager(
+    wager_id: str,
+    data: CancelWagerRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
+    """Cancel a placed (not yet locked) wager. Funds are returned.
+
+    Requires authentication; body `user_id` must match the principal."""
+    require_self(data.user_id, user)
     try:
         wager = _wager_service.cancel_wager(wager_id, data.user_id)
     except ValueError as e:
@@ -144,12 +174,25 @@ async def get_wallet_balance(wallet_address: str) -> dict:
 
 
 @router.post("/wallet/{wallet_address}/airdrop")
-async def airdrop_sol(wallet_address: str, data: AirdropRequest) -> dict:
+async def airdrop_sol(
+    wallet_address: str,
+    data: AirdropRequest,
+    user: dict = Depends(get_current_user),
+) -> dict:
     """
-    Airdrop devnet SOL to a wallet (testing only).
+    Airdrop devnet SOL to a wallet — dev-only.
 
-    In production, this endpoint would be removed.
+    Returns 404 outside of dev (BW_ENV != "dev") so the route doesn't
+    leak its existence in production. The authenticated user can only
+    airdrop to their own wallet.
     """
+    require_dev_env()
+    if wallet_address != expected_wallet(user):
+        raise HTTPException(
+            status_code=403,
+            detail="Can only airdrop to your own wallet",
+        )
+
     wallet = _wager_service.get_or_create_wallet(wallet_address)
     wallet.balance_sol += data.amount_sol
 

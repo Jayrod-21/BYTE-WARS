@@ -153,6 +153,9 @@ async def run_tests():
         assert resp.status_code == 201
         print("  PASS: Second user registered")
 
+        # Authenticate as player2 for the champion/match calls below.
+        client.headers["Authorization"] = f"Bearer {resp.json()['token']}"
+
         # Create champions
         champ_ids = []
         for arch in ["tank", "assassin"]:
