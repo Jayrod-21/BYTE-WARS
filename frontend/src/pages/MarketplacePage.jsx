@@ -126,7 +126,7 @@ export default function MarketplacePage() {
       {loading && <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--bw-ink-dim)' }}>SCANNING MARKETPLACE…</div>}
 
       {!loading && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 16, alignItems: 'start' }}>
+        <div className="bw-split">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
             {filtered.map(listing => {
               const nft = listing.nft_snapshot || {};
