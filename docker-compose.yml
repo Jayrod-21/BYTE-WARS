@@ -1,3 +1,4 @@
+name: byte-wars
 # BYTE Wars — Docker Compose Configuration
 # Spins up the full development stack: FastAPI backend, PostgreSQL, and Redis.
 # Usage: docker-compose up --build
@@ -10,7 +11,7 @@ services:
       dockerfile: Dockerfile
     container_name: byte-wars-backend
     ports:
-      - "8000:8000"
+      - "8003:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://bytewars:bytewars_dev@postgres:5432/bytewars
       - REDIS_URL=redis://redis:6379/0
@@ -28,7 +29,7 @@ services:
     image: postgres:16-alpine
     container_name: byte-wars-postgres
     ports:
-      - "5432:5432"
+      - "5435:5432"
     environment:
       POSTGRES_USER: bytewars
       POSTGRES_PASSWORD: bytewars_dev
@@ -47,12 +48,29 @@ services:
     image: redis:7-alpine
     container_name: byte-wars-redis
     ports:
-      - "6379:6379"
+      - "6381:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
+
+  # --- React/Vite Frontend ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: byte-wars-frontend
+    ports:
+      - "5174:5173"
+    environment:
+      - VITE_API_URL=http://backend:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     restart: unless-stopped
 
 volumes:
