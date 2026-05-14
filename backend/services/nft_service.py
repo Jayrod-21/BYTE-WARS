@@ -483,11 +483,13 @@ class NFTService:
         # Simulate SOL payment
         if wallet:
             wallet.balance_sol -= listing.price_sol
-        # Credit seller
-        seller_wallet_key = f"devnet_{listing.seller_id[:8]}" if len(listing.seller_id) > 8 else listing.seller_id
+        # Credit seller — resolve to their linked wallet so credits land
+        # in the same balance the seller's UI shows.
+        from services.auth_service import _users_store
         from services.wager_service import WagerService
-        ws = WagerService()
-        seller_wallet = ws.get_or_create_wallet(seller_wallet_key)
+        seller_user = _users_store.get(listing.seller_id) or {}
+        seller_wallet_key = seller_user.get("wallet_address") or f"devnet_{listing.seller_id}"
+        seller_wallet = WagerService().get_or_create_wallet(seller_wallet_key)
         seller_wallet.balance_sol += listing.price_sol
 
         # Update listing

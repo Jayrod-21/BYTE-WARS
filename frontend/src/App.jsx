@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { getUser, logout, getWalletBalance } from './services/api';
+import { getUser, logout, getWalletBalance, walletForUser } from './services/api';
 import { SolDiamond } from './ui/primitives';
 import LoginPage from './pages/LoginPage';
 import ChampionsPage from './pages/ChampionsPage';
 import ChampionBuilderPage from './pages/ChampionBuilderPage';
+import ChampionEditPage from './pages/ChampionEditPage';
 import MatchLobbyPage from './pages/MatchLobbyPage';
 import MatchHistoryPage from './pages/MatchHistoryPage';
 import PlaybackPage from './pages/PlaybackPage';
@@ -27,7 +28,7 @@ function HeaderBar({ user, onLogout }) {
   const [balance, setBalance] = useState(null);
   useEffect(() => {
     if (!user) { setBalance(null); return; }
-    const wallet = user.wallet_address || `devnet_${user.id || 'anon'}`;
+    const wallet = walletForUser(user);
     let cancelled = false;
     getWalletBalance(wallet)
       .then(b => { if (!cancelled) setBalance(b?.balance_sol ?? b?.balance ?? 0); })
@@ -157,7 +158,7 @@ function AppContent() {
           <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
           <Route path="/champions" element={<ChampionsPage />} />
           <Route path="/champions/new" element={<ChampionBuilderPage />} />
-          <Route path="/champions/:id/edit" element={<ChampionBuilderPage />} />
+          <Route path="/champions/:id/edit" element={<ChampionEditPage />} />
           <Route path="/lobby" element={<MatchLobbyPage />} />
           <Route path="/history" element={<MatchHistoryPage />} />
           <Route path="/playback/:matchId" element={<PlaybackPage />} />

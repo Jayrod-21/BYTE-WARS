@@ -226,4 +226,9 @@ export async function transferNFT(nftId, fromOwner, toOwner) {
   });
 }
 
+export function walletForUser(user) {
+  if (!user) return null;
+  return user.wallet_address || `devnet_${user.id}`;
+}
+
 export { getToken, getUser, setToken, setUser };
