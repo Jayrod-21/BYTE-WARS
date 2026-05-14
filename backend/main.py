@@ -50,6 +50,13 @@ async def lifespan(app: FastAPI):
         logging.warning(f"Could not connect to database on startup: {e}")
         logging.warning("Tables will be created when database becomes available.")
 
+    try:
+        from seed import run_seed
+        run_seed()
+    except Exception as e:
+        import logging
+        logging.warning(f"Seed run failed: {e}")
+
     yield  # App runs here
 
     try:

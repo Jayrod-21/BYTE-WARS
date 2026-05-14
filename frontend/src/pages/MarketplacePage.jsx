@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { browseMarketplace, buyListing, getUser } from '../services/api';
+import { browseMarketplace, buyListing, getUser, walletForUser, airdropSol } from '../services/api';
 import {
   PixelButton, Pill, ItemIcon, rarityColor, Panel, SolDiamond,
 } from '../ui/primitives';
@@ -61,13 +61,23 @@ export default function MarketplacePage() {
     setBuying(listingId);
     setError('');
     try {
-      const wallet = user.wallet_address || `devnet_${user.id.slice(0, 8)}`;
+      const wallet = walletForUser(user);
       await buyListing(listingId, user.id, wallet);
       loadListings();
     } catch (err) {
       setError(err.message);
     } finally {
       setBuying('');
+    }
+  }
+
+  async function handleAirdrop() {
+    if (!user) return;
+    try {
+      await airdropSol(walletForUser(user), 10);
+      setError('Airdropped 10 SOL — try the purchase again.');
+    } catch (err) {
+      setError(`Airdrop failed: ${err.message}`);
     }
   }
 
@@ -122,7 +132,14 @@ export default function MarketplacePage() {
         </div>
       </Panel>
 
-      {error && <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--bw-blood)' }}>! {error}</div>}
+      {error && (
+        <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--bw-blood)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span>! {error}</span>
+          {/Insufficient balance/i.test(error) && (
+            <PixelButton variant="cyan" type="button" onClick={handleAirdrop}>+10 SOL AIRDROP</PixelButton>
+          )}
+        </div>
+      )}
       {loading && <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--bw-ink-dim)' }}>SCANNING MARKETPLACE…</div>}
 
       {!loading && (

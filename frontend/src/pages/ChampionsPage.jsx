@@ -60,7 +60,11 @@ export default function ChampionsPage() {
 
       {!loading && (
         <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
-          {slots.map(c => <ChampionCard key={c.id} champion={c} />)}
+          {slots.map(c => (
+            <Link key={c.id} to={`/champions/${c.id}/edit`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <ChampionCard champion={c} />
+            </Link>
+          ))}
           {filter === '' && Array.from({ length: empty }).map((_, i) => (
             <Link key={`empty-${i}`} to="/champions/new" style={{ textDecoration: 'none' }}>
               <EmptySlot />
@@ -101,8 +105,16 @@ function ChampionCard({ champion }) {
           <Pill color={archColor}>{champion.archetype}</Pill>
         </div>
 
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--bw-ink-dim)', marginBottom: 10 }}>
-          LV.{champion.level ?? 1} · {champion.model || 'mock-bot'}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--bw-ink-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            LV.{champion.level ?? 1} · {champion.model || 'mock-bot'}
+          </div>
+          <Pill
+            color={champion.has_api_key ? 'var(--bw-acid)' : 'var(--bw-line-2)'}
+            textColor={champion.has_api_key ? '#0a1a00' : 'var(--bw-ink-dim)'}
+          >
+            {champion.has_api_key ? 'KEY ✓' : 'NO KEY'}
+          </Pill>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 10 }}>

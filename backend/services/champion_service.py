@@ -257,8 +257,9 @@ class ChampionService:
                 updated["skill_slots"] = value
 
             elif field == "api_key":
-                # Re-encrypt the new API key
-                updated["api_key"] = encrypt_api_key(value)
+                # Empty string explicitly clears the stored key (fall back
+                # to mockbot). Any non-empty value is re-encrypted.
+                updated["api_key"] = encrypt_api_key(value) if value else None
 
             else:
                 updated[field] = value
